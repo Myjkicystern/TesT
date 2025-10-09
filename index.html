@@ -236,7 +236,7 @@ function showModal(msg){
   const modal = document.getElementById("successModal");
   modal.classList.add("show");
   clearTimeout(modalTimeout);
-  modalTimeout = setTimeout(()=>closeModal(),3000);
+  modalTimeout = setTimeout(()=>closeModal(),6000);
 }
 function closeModal(){ document.getElementById("successModal").classList.remove("show"); }
 
@@ -353,4 +353,5 @@ function saveUserInDB(){
 </script>
 <div class="version">Бета-Версія 1.0.0</div>
 </body>
+
 </html>
