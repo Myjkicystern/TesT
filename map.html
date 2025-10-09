@@ -179,7 +179,7 @@ mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0));
 // === Маркери ===
 const markers={};
 function addMarkerToMap(id,data){
-  const icon = data.icon ? L.icon({iconUrl: data.icon, iconSize:[40,40], iconAnchor:[20,40]}) : undefined;
+  const icon = data.icon ? L.icon({iconUrl: data.icon, iconSize:[35,35], iconAnchor:[20,40]}) : undefined;
   const popupContent = `<div style="text-align:center;"><b style="color:#007bff;">${data.title}</b><br>${data.desc}</div>`;
   const marker = L.marker([data.lat,data.lng], icon ? {icon} : {}).addTo(map).bindPopup(popupContent);
   markers[id] = marker;
@@ -347,3 +347,4 @@ document.getElementById('goToCoord').onclick=()=>{
 </script>
 </body>
 </html>
+
