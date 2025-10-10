@@ -40,7 +40,25 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 .purple-btn:active{transform:scale(0.96);box-shadow:0 2px 5px rgba(0,0,0,0.2);}
 .admin-key{background:#ffc107;color:#fff;font-size:18px;padding:10px 14px;border-radius:50%;border:none;cursor:pointer;transition:transform 0.2s ease;}
 .admin-key:hover{transform:scale(1.2);background:#e0a800;}
-.info-icon{position:absolute;right:5px;top:50%;transform:translateY(-50%);cursor:pointer;color:#007bff;font-weight:bold;}
+.info-icon {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-70%);
+  cursor: pointer;
+  width: 25px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.5s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.info-icon:hover {
+  transform: translateY(-60%) scale(1.20);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
 .user-block-btn{font-size:11px;padding:2px 6px;margin-left:5px;border:none;border-radius:4px;cursor:pointer;}
 .blocked-user{opacity:0.6;}
 </style>
@@ -54,7 +72,18 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 <div id="loginSection">
   <div style="position:relative; display:inline-block; width:80%; max-width:250px; margin-bottom:5px;">
     <input type="text" id="userNameInput" placeholder="Введіть ім'я" style="width:100%; padding-right:25px;">
-    <span class="info-icon" id="infoIcon" onclick="showUserInfo()">ℹ️</span>
+    <span class="info-icon" id="infoIcon" onclick="showUserInfo()" title="Інформація">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="16" height="16">
+    <circle cx="12" cy="12" r="10" fill="url(#grad)" />
+    <path d="M11 10h2v7h-2zm0-4h2v2h-2z" fill="#fff"/>
+    <defs>
+      <linearGradient id="grad" x1="0" y1="0" x2="24" y2="24">
+        <stop offset="0%" stop-color="#007bff"/>
+        <stop offset="100%" stop-color="#6f42c1"/>
+      </linearGradient>
+    </defs>
+  </svg>
+</span>
   </div>
   <button class="btn btn-main" onclick="signInAnon()">Увійти</button>
   <button class="admin-key" onclick="promptAdmin()" title="Вхід для адміна">🔑</button>
