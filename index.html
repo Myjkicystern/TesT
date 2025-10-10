@@ -11,7 +11,7 @@
 .marquee-container {
   width: 100%;
   overflow: hidden;
-  background: linear-gradient(90deg, #969797,#6877cf, #5806f0);
+  background: linear-gradient(90deg, #969797,#6471b9, #6415f5);
   color: rgb(255, 255, 255);
   padding: 6px 0;
   position: fixed;
@@ -27,22 +27,13 @@
   white-space: nowrap;
   animation: scrollPause 40s linear infinite;
 }
-
-.marquee-text span {
-  padding-right: 100px; /* відстань між повтореннями тексту */
-}
-
-/* Анімація з паузою на старті */
+.marquee-text span { padding-right: 100px; }
 @keyframes scrollPause {
-  0%, 10% { transform: translateX(0); }  /* перші 10% часу — пауза */
-  100% { transform: translateX(-50%); }  /* рух до кінця */
+  0%, 10% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
-
-/* Мобільні пристрої */
 @media (max-width: 600px) {
-  .marquee-text {
-    animation-duration: 30s; /* швидше рух на маленьких екранах */
-  }
+  .marquee-text { animation-duration: 30s; }
 }
   /* 🔹 Відступ, щоб рядок не закривав заголовок */
 body {
@@ -52,35 +43,7 @@ body {
 body {
   margin-top: 40px;
 }
-
-/* Spinner */
-#loadingSpinner {
-  display:none;
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  border:6px solid #f3f3f3;
-  border-top:6px solid #007bff;
-  border-radius:50%;
-  width:50px;
-  height:50px;
-  animation:spin 1s linear infinite;
-  z-index:6000;
-}
-@keyframes spin {
-  0%{transform:translate(-50%,-50%) rotate(0deg);}
-  100%{transform:translate(-50%,-50%) rotate(360deg);}
-}
-
-body {
-  font-family: Roboto, sans-serif;
-  text-align: center;
-  padding: 10px;
-  background: #f0f2f5;
-  margin: 0;
-  overflow-x: hidden;
-}
+body { margin-top: 40px; font-family: Roboto, sans-serif; text-align: center; padding: 10px; background: #f0f2f5; overflow-x: hidden; }
 h1{font-size:18px;margin:5px 0;}
 h2{font-size:16px;margin:5px 0;}
 p{font-size:14px;margin:5px 0;color:#0056b3;}
@@ -96,7 +59,7 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 .comment{background:#e0e0e0;padding:10px;margin-bottom:5px;border-radius:4px;position:relative;}
 .comment button{margin-left:3px;padding:2px 4px;font-size:10px;cursor:pointer;}
 .comment .comment-like{font-size:12px;margin-left:5px;background:#007bff;color:#fff;border:none;padding:2px 6px;border-radius:4px;cursor:pointer;}
-.comment .comment-like.active{background:#0056b3;}
+.comment .comment-like.active-like{background:#0056b3;}
 .comment .comment-time{font-size:11px;color:#555;margin-top:3px;}
 .version{position:fixed;bottom:5px;left:50%;transform:translateX(-50%);font-size:10px;color:#888;background:rgba(255,255,255,0.7);padding:2px 4px;border-radius:3px;}
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s ease;}
@@ -113,27 +76,13 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 .purple-btn:active{transform:scale(0.96);box-shadow:0 2px 5px rgba(0,0,0,0.2);}
 .admin-key{background:#ffc107;color:#fff;font-size:18px;padding:10px 14px;border-radius:50%;border:none;cursor:pointer;transition:transform 0.2s ease;}
 .admin-key:hover{transform:scale(1.2);background:#e0a800;}
-.info-icon {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-70%);
-  cursor: pointer;
-  width: 25px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.5s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-}
-.info-icon:hover {
-  transform: translateY(-60%) scale(1.20);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-}
+.info-icon {position: absolute; right: 6px; top: 50%; transform: translateY(-70%); cursor: pointer; width: 25px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.5s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.25);}
+.info-icon:hover {transform: translateY(-60%) scale(1.20); box-shadow: 0 3px 10px rgba(0,0,0,0.3);}
 .user-block-btn{font-size:11px;padding:2px 6px;margin-left:5px;border:none;border-radius:4px;cursor:pointer;}
 .blocked-user{opacity:0.6;}
+/* Spinner */
+#loadingSpinner {display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; z-index:6000;}
+@keyframes spin {0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -207,10 +156,11 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
-/* ========== Усі функції JavaScript ========== */
+// ================= Spinner =================
 function showSpinner(){document.getElementById('loadingSpinner').style.display='block';}
 function hideSpinner(){document.getElementById('loadingSpinner').style.display='none';}
 
+// ================= Firebase =================
 const firebaseConfig = {
   apiKey:"AIzaSyCG5mxvBurQdQeSz6dIo-Qd5UJEwnhCxpA",
   authDomain:"miyjky.firebaseapp.com",
@@ -225,6 +175,7 @@ const db=firebase.database();
 
 let currentUserUID=null,currentUserName=null,isAdmin=false,modalTimeout,blocked=false;
 
+// ================= Window Onload =================
 window.onload=function(){
   const savedUID=localStorage.getItem('userUID');
   const savedName=localStorage.getItem('userName');
@@ -240,6 +191,7 @@ window.onload=function(){
   }
 }
 
+// ================= Modal =================
 function showModal(msg){
   document.getElementById("modalText").innerText=msg;
   const m=document.getElementById("successModal");
@@ -254,6 +206,7 @@ function showUserInfo(){
   showModal("Введіть своє ім'я та натисніть Увійти. Потім ви зможете залишати коментарі та оцінювати мийки.");
 }
 
+// ================= Авторизація =================
 function signInAnon(){
   let name=document.getElementById('userNameInput').value.trim();
   if(!name) return showModal("Введіть ім'я!");
@@ -312,6 +265,7 @@ function logout(){
   });
 }
 
+// ================= UI =================
 function enableUI(){
   if(currentUserUID && currentUserName) saveUserInDB();
   document.getElementById('likeBtn').disabled=false;
@@ -329,6 +283,7 @@ function enableUI(){
   checkBlockedStatus();
 }
 
+// ================= Лайки/Дизлайки =================
 function updateCounters(){
   db.ref('votes').once('value').then(snap=>{
     const d=snap.val()||{likes:0,dislikes:0};
@@ -369,6 +324,7 @@ function checkUserVote(){
   });
 }
 
+// ================= Коментарі =================
 function sendComment(){
   if(blocked)return showModal("Вас заблоковано!");
   const text=document.getElementById('commentInput').value.trim();
@@ -385,20 +341,62 @@ db.ref('comments').on('value',snap=>{
   list.innerHTML='';
   for(let key in comments){
     const c=comments[key];
-    const div=document.createElement('div');
-    div.className='comment'+(c.blocked?' blocked-user':'');
-    div.innerHTML=`<b>${c.name}:</b> ${c.text}<div class='comment-time'>${c.time||''}</div>`;
+    const userLiked = c.likes && c.likes[currentUserUID];
+
+    let likesText = '';
+    if(c.likes){
+      for(let uid in c.likes){
+        likesText += `${c.likes[uid].name} (${c.likes[uid].time}) `;
+      }
+    }
+
+    const div = document.createElement('div');
+    div.className = 'comment' + (c.blocked ? ' blocked-user' : '');
+    div.innerHTML = `
+      <b>${c.name}:</b> ${c.text}
+      <div class='comment-time'>${c.time || ''}</div>
+      <button class="comment-like ${userLiked ? 'active-like' : ''}" onclick="likeComment('${key}')">
+        👍 Лайк (${c.likesCount || 0})
+      </button>
+      <div style="font-size:11px; color:#333;">${likesText}</div>
+    `;
     if(isAdmin){
-      div.innerHTML+=`<button class="user-block-btn" onclick="blockComment('${key}',${!c.blocked})">${c.blocked?'Розблок.':'Блок.'}</button>`;
+      div.innerHTML += `
+        <button class="user-block-btn" onclick="blockComment('${key}',${!c.blocked})">
+          ${c.blocked?'Розблок.':'Блок.'}
+        </button>
+        <button class="user-block-btn" style="background:#dc3545;color:#fff;" onclick="deleteComment('${key}')">
+          Видалити
+        </button>
+      `;
     }
     list.appendChild(div);
   }
 });
 
+// ================= Лайк коментаря =================
+function likeComment(commentId){
+  if(!currentUserUID) return showModal("Ви не авторизовані!");
+  if(blocked) return showModal("Вас заблоковано!");
+
+  const commentRef = db.ref('comments/' + commentId);
+  commentRef.once('value').then(snap => {
+    const c = snap.val();
+    if(!c.likes) c.likes = {};
+    if(c.likes[currentUserUID]) return showModal("Ви вже лайкнули цей коментар!");
+    c.likes[currentUserUID] = { name: currentUserName, time: new Date().toLocaleString() };
+    c.likesCount = (c.likesCount || 0) + 1;
+    commentRef.update({ likes: c.likes, likesCount: c.likesCount });
+  });
+}
+
+// ================= Адмін =================
 function blockComment(id,state){
   db.ref('comments/'+id+'/blocked').set(state);
 }
-
+function deleteComment(id){
+  db.ref('comments/'+id).remove();
+}
 function saveUserInDB(){
   db.ref('users/'+currentUserUID).set({name:currentUserName,isAdmin,isBlocked:false});
 }
@@ -418,7 +416,6 @@ function loadUsers(){
     document.getElementById('usersSection').style.display='block';
   });
 }
-
 function toggleBlock(uid,state){
   db.ref('users/'+uid+'/isBlocked').set(state);
 }
@@ -441,5 +438,3 @@ function checkBlockedStatus(){
 
 </body>
 </html>
-
-
