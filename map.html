@@ -144,7 +144,6 @@ counterDiv.addTo(map);
 mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0));
 
 // Маркери
-const markers={};
 function addMarkerToMap(id,data){
   const icon = data.icon ? L.icon({iconUrl: data.icon, iconSize:[35,35], iconAnchor:[20,40]}) : undefined;
 
@@ -153,23 +152,31 @@ function addMarkerToMap(id,data){
   popupDiv.innerHTML=`<div style="text-align:center;"><b style="color:#007bff;">${data.title}</b><br>${data.desc}</div>`;
 
   // Share кнопка
-  const btnContainer=document.createElement('div'); btnContainer.className='share-btn-container';
-  const shareBtn=document.createElement('div'); shareBtn.className='share-btn'; shareBtn.textContent='Поділитися';
+  const btnContainer=document.createElement('div'); 
+  btnContainer.className='share-btn-container';
+  const shareBtn=document.createElement('div'); 
+  shareBtn.className='share-btn'; 
+  shareBtn.textContent='Поділитися';
   shareBtn.onclick=async()=>{
-    const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`;
+    const text=`📍 ${data.title}\n${data.desc}`; // <- Тільки назва та опис, без координат
     if(navigator.share){
-      try{ await navigator.share({text}); } catch(err){ alert("Помилка при спробі поділитися"); }
-    } else { navigator.clipboard.writeText(text); alert("Текст скопійовано в буфер обміну"); }
+      try{ await navigator.share({text}); } 
+      catch(err){ alert("Помилка при спробі поділитися"); }
+    } else { 
+      navigator.clipboard.writeText(text); 
+      alert("Текст скопійовано в буфер обміну"); 
+    }
   };
   btnContainer.appendChild(shareBtn);
   popupDiv.appendChild(btnContainer);
 
-  const marker=L.marker([data.lat,data.lng],icon?{icon}:{}).addTo(map);
-  marker.bindPopup(popupDiv);
+  const marker=L.marker([data.lat,data.lng], icon?{icon}:{});
+  marker.addTo(map).bindPopup(popupDiv);
   markers[id]=marker;
 
   if(isAdmin){ marker.on('click',()=>openEditWindow(id,data)); }
 }
+
 
 // Firebase обробка
 db.ref('markers').on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
