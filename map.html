@@ -130,7 +130,7 @@ document.getElementById('locateBtn').onclick=()=>{
       map.setView([latitude, longitude], 15);
       if(window.userMarker){ window.userMarker.setLatLng([latitude,longitude]); }
       else { window.userMarker = L.circleMarker([latitude,longitude],{radius:8,color:'#fff',fillColor:'#3399ff',fillOpacity:0.8}).addTo(map).bindPopup("Моє місце").openPopup(); }
-    },()=>alert("Не вдалося визначити місцезнаходження."),{enableHighAccuracy:true});
+    }, err=>alert("Не вдалося визначити місцезнаходження."), {enableHighAccuracy:true});
   } else alert("Геолокація не підтримується вашим браузером.");
 };
 
@@ -144,12 +144,16 @@ counterDiv.addTo(map);
 mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0));
 
 // Маркери
+const markers={};
 function addMarkerToMap(id,data){
   const icon = data.icon ? L.icon({iconUrl: data.icon, iconSize:[35,35], iconAnchor:[20,40]}) : undefined;
 
   // Попап
   const popupDiv=document.createElement('div');
   popupDiv.innerHTML=`<div style="text-align:center;"><b style="color:#007bff;">${data.title}</b><br>${data.desc}</div>`;
+
+  // Текст для share (без координат)
+  const shareText = `📍 ${data.title}\n${data.desc}`;
 
   // Share кнопка
   const btnContainer=document.createElement('div'); 
@@ -158,12 +162,11 @@ function addMarkerToMap(id,data){
   shareBtn.className='share-btn'; 
   shareBtn.textContent='Поділитися';
   shareBtn.onclick=async()=>{
-    const text=`📍 ${data.title}\n${data.desc}`; // <- Тільки назва та опис, без координат
     if(navigator.share){
-      try{ await navigator.share({text}); } 
+      try{ await navigator.share({text: shareText}); } 
       catch(err){ alert("Помилка при спробі поділитися"); }
     } else { 
-      navigator.clipboard.writeText(text); 
+      navigator.clipboard.writeText(shareText); 
       alert("Текст скопійовано в буфер обміну"); 
     }
   };
@@ -177,14 +180,18 @@ function addMarkerToMap(id,data){
   if(isAdmin){ marker.on('click',()=>openEditWindow(id,data)); }
 }
 
-
 // Firebase обробка
 db.ref('markers').on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
 db.ref('markers').on('child_changed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); addMarkerToMap(snap.key,snap.val()); } });
 db.ref('markers').on('child_removed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); delete markers[snap.key]; } });
 
 // Автоцентрування
-db.ref('markers').once('value').then(snap=>{ const data=snap.val(); const latlngs=[]; for(const key in data) latlngs.push([data[key].lat,data[key].lng]); if(latlngs.length>0) map.fitBounds(latlngs,{padding:[10,50]}); });
+db.ref('markers').once('value').then(snap=>{
+  const data=snap.val();
+  const latlngs=[];
+  for(const key in data) latlngs.push([data[key].lat,data[key].lng]);
+  if(latlngs.length>0) map.fitBounds(latlngs,{padding:[10,50]});
+});
 
 // Адмін
 let isAdmin=false;
