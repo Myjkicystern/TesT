@@ -7,12 +7,12 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#007bff">
 <style>
-/* 🔹 Бігучий рядок */
+/* 🔹 Контейнер бігучого рядка */
 .marquee-container {
   width: 100%;
   overflow: hidden;
-  background: linear-gradient(90deg, #969797,#3a3cb6, #05039e);
-  color: rgb(255, 255, 255);
+  background: linear-gradient(90deg, #969797, #3a3cb6, #05039e);
+  color: white;
   padding: 6px 0;
   position: fixed;
   top: 0;
@@ -22,22 +22,19 @@
   font-weight: bold;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-.marquee-text {
+
+/* 🔹 Внутрішній блок з текстом */
+.marquee-track {
   display: inline-block;
   white-space: nowrap;
-  animation: scrollPause 40s linear infinite;
+  will-change: transform;
 }
-.marquee-text span { padding-right: 100px; }
-@keyframes scrollPause {
-  0%, 10% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-@media (max-width: 600px) {
-  .marquee-text { animation-duration: 30s; }
-}
-  /* 🔹 Відступ, щоб рядок не закривав заголовок */
+
 body {
-  margin-top: 20px !important; /* ✅ збільшено для компенсації фіксованого рядка */
+  margin-top: 40px;
+  font-family: Roboto, sans-serif;
+  background: #f0f2f5;
+  text-align: center;
 }
 /* Щоб контент не перекривався рядком */
 body {
@@ -89,9 +86,8 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 
 <!-- 🔹 Бігучий рядок -->
 <div class="marquee-container">
-  <div class="marquee-text">
-    <span> 🚧Додаток розвивається. Можливі тимчасові зміни у функціоналі, дизайні або структурі сторінок. 💡 Нові можливості, покращення продуктивності та виправлення помилок додаються поступово. 🚀 Слідкуйте за новинами — попереду багато цікавого!</span>
-    <span>🚧 Додаток розвивається. Можливі тимчасові зміни у функціоналі, дизайні або структурі сторінок. 💡 Нові можливості, покращення продуктивності та виправлення помилок додаються поступово. 🚀 Слідкуйте за новинами — попереду багато цікавого!</span>
+  <div class="marquee-track" id="marqueeTrack">
+    🚧 Додаток розвивається. Можливі тимчасові зміни у функціоналі, дизайні або структурі сторінок. 💡 Нові можливості, покращення продуктивності та виправлення помилок додаються поступово. 🚀 Слідкуйте за новинами — попереду багато цікавого!
   </div>
 </div>
 
@@ -156,6 +152,38 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
+
+  const marquee = document.getElementById("marqueeTrack");
+
+function startMarquee() {
+  const textWidth = marquee.offsetWidth;
+  const screenWidth = window.innerWidth;
+  
+  // Розрахунок швидкості: чим довший текст — тим швидше рух
+  const baseSpeed = 60; // чим більше число — тим повільніше
+  const duration = (textWidth + screenWidth) / baseSpeed;
+
+  // Початкова позиція — правий край
+  marquee.animate(
+    [
+      { transform: `translateX(${screenWidth}px)` },
+      { transform: `translateX(-${textWidth}px)` }
+    ],
+    {
+      duration: duration * 1000,
+      iterations: Infinity,
+      easing: "linear"
+    }
+  );
+}
+
+// Запуск після завантаження
+window.addEventListener("load", startMarquee);
+// Перезапуск при зміні розміру екрана
+window.addEventListener("resize", () => {
+  marquee.getAnimations().forEach(a => a.cancel());
+  startMarquee();
+});
 // ================= Spinner =================
 function showSpinner(){document.getElementById('loadingSpinner').style.display='block';}
 function hideSpinner(){document.getElementById('loadingSpinner').style.display='none';}
