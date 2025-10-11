@@ -48,8 +48,9 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 /* Автор */
 #author { position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.85); color: #333; padding: 4px 10px; border-radius: 8px; font-size: 10px; z-index: 4000; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-/* Кнопки месенджерів */
-.share-btn { display:inline-flex; align-items:center; gap:5px; margin:2px; padding:4px 8px; border:none; border-radius:5px; cursor:pointer; font-size:13px; color:#fff; }
+/* Кнопки месенджерів для мобільних */
+.share-btn-container { display:flex; flex-wrap:wrap; justify-content:center; margin-top:5px; gap:5px; }
+.share-btn { display:flex; align-items:center; gap:4px; padding:3px 6px; border-radius:5px; font-size:12px; color:#fff; cursor:pointer; }
 .share-btn img { width:16px; height:16px; }
 .whatsapp { background:#25D366; }
 .telegram { background:#0088cc; }
@@ -156,7 +157,7 @@ counterDiv.update=function(val){ this._div.innerHTML=`👁️ ${val}`; };
 counterDiv.addTo(map);
 mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0));
 
-// === Маркери з поділитися ===
+// === Маркери з кнопками поділитися ===
 const markers={};
 function addMarkerToMap(id,data){
   const icon = data.icon ? L.icon({iconUrl:data.icon,iconSize:[35,35],iconAnchor:[20,40]}) : undefined;
@@ -165,24 +166,33 @@ function addMarkerToMap(id,data){
   const titleEl=document.createElement('b'); titleEl.style.color='#007bff'; titleEl.textContent=data.title; popupDiv.appendChild(titleEl);
   const descEl=document.createElement('div'); descEl.style.marginTop='5px'; descEl.textContent=data.desc||""; popupDiv.appendChild(descEl);
 
-  const btnContainer=document.createElement('div'); btnContainer.style.marginTop='5px';
+  const btnContainer=document.createElement('div'); btnContainer.className='share-btn-container';
 
   // WhatsApp
-  const waBtn=document.createElement('button'); waBtn.className='share-btn whatsapp';
+  const waBtn=document.createElement('div'); waBtn.className='share-btn whatsapp';
   waBtn.innerHTML='<img src="https://cdn-icons-png.flaticon.com/512/733/733585.png"> WhatsApp';
-  waBtn.onclick=()=>{ const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,'_blank'); };
+  waBtn.onclick=()=>{ 
+    const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,'_blank');
+  };
   btnContainer.appendChild(waBtn);
 
   // Telegram
-  const tgBtn=document.createElement('button'); tgBtn.className='share-btn telegram';
+  const tgBtn=document.createElement('div'); tgBtn.className='share-btn telegram';
   tgBtn.innerHTML='<img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png"> Telegram';
-  tgBtn.onclick=()=>{ const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`; window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(text)}`,'_blank'); };
+  tgBtn.onclick=()=>{ 
+    const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`;
+    window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(text)}`,'_blank');
+  };
   btnContainer.appendChild(tgBtn);
 
   // Email
-  const mailBtn=document.createElement('button'); mailBtn.className='share-btn email';
+  const mailBtn=document.createElement('div'); mailBtn.className='share-btn email';
   mailBtn.innerHTML='<img src="https://cdn-icons-png.flaticon.com/512/561/561127.png"> Email';
-  mailBtn.onclick=()=>{ const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`; window.open(`mailto:?subject=${encodeURIComponent(data.title)}&body=${encodeURIComponent(text)}`,'_blank'); };
+  mailBtn.onclick=()=>{ 
+    const text=`📍 ${data.title}\n${data.desc}\nКоординати: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`;
+    window.open(`mailto:?subject=${encodeURIComponent(data.title)}&body=${encodeURIComponent(text)}`,'_blank');
+  };
   btnContainer.appendChild(mailBtn);
 
   popupDiv.appendChild(btnContainer);
@@ -194,7 +204,7 @@ function addMarkerToMap(id,data){
   if(isAdmin){ marker.on('click',()=>openEditWindow(id,data)); }
 }
 
-// Firebase маркери
+// Firebase обробка маркерів
 db.ref('markers').on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
 db.ref('markers').on('child_changed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); addMarkerToMap(snap.key,snap.val()); } });
 db.ref('markers').on('child_removed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); delete markers[snap.key]; } });
