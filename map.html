@@ -17,17 +17,35 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { height:100%; width:100%; }
 
 #layerBtn, #adminBtn, #locateBtn {
-  position:fixed; bottom:15px;
-  background:#007bff; color:#fff; border:none;
-  padding:10px 15px; border-radius:8px;
+  position: fixed;
+  border: none;
+  cursor: pointer;
+  z-index: 4000;
+  font-size: 18px;
   box-shadow:0 2px 6px rgba(0,0,0,0.3);
-  cursor:pointer; z-index:4000;
-  font-size:18px;
 }
-#layerBtn { left:15px; }
-#adminBtn { right:15px; background:#28a745; width:50px; height:50px; border-radius:50%; font-size:24px; }
-#locateBtn { right:15px; bottom:80px; background:#17a2b8; width:50px; height:50px; border-radius:50%; font-size:24px; }
+#layerBtn { bottom:15px; left:15px; padding:10px 15px; border-radius:8px; background:#007bff; color:#fff; }
+#adminBtn { bottom:15px; right:15px; width:50px; height:50px; border-radius:50%; background:#28a745; color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center; }
+#locateBtn {
+  bottom:80px; right:15px;
+  width:50px; height:50px;
+  border-radius:50%;
+  background:#17a2b8;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition: background 0.3s, transform 0.2s;
+}
+#locateBtn:hover { background:#138496; transform:scale(1.1); }
+#locateBtn::before {
+  content:'';
+  width:12px;
+  height:12px;
+  background:white;
+  border-radius:50%;
+}
 
+/* Попапи */
 .popup-box {
   background:#fff; padding:20px; border-radius:8px;
   text-align:center; width:280px;
@@ -59,7 +77,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   z-index:5000; display:none;
 }
 
-/* Вікно координат (приховане, лише для адміна) */
+/* Вікно координат (лише для адміна) */
 #coordSearch {
   display:none;
   position:fixed;
@@ -101,9 +119,8 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 <div id="map"></div>
 <button id="layerBtn">🗺️</button>
 <button id="adminBtn">🔑</button>
-<button id="locateBtn">📍</button>
+<button id="locateBtn" title="Моє місце"></button>
 
-<!-- Автор -->
 <div id="author">© 2025 Автор: Андрій Мочурад</div>
 
 <!-- Вхід -->
@@ -141,7 +158,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   </div>
 </div>
 
-<!-- Вікно координат (лише для адміна) -->
+<!-- Вікно координат -->
 <div id="coordSearch">
   <input type="number" id="latInput" step="0.0001" placeholder="Широта">
   <input type="number" id="lngInput" step="0.0001" placeholder="Довгота">
@@ -173,7 +190,7 @@ document.getElementById('layerBtn').onclick=()=>{
   isSatellite=!isSatellite;
 };
 
-// === Геолокація через кнопку ===
+// === Кнопка геолокації ===
 document.getElementById('locateBtn').onclick=()=>{
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
@@ -212,17 +229,6 @@ function addMarkerToMap(id,data){
   markers[id] = marker;
   if(isAdmin){ marker.on('click', ()=>openEditWindow(id,data)); }
 }
-
-// Центрування карти на всі точки
-function fitMapToMarkers(){
-  const allMarkers = Object.values(markers).map(m=>m.getLatLng());
-  if(allMarkers.length>0){
-    const bounds = L.latLngBounds(allMarkers);
-    map.fitBounds(bounds, {padding:[50,50]});
-  }
-}
-
-// Функція оновлення кліків для адміна
 function refreshAdminClicks(){
   for(const [id, marker] of Object.entries(markers)){
     marker.off('click');
@@ -234,24 +240,23 @@ function refreshAdminClicks(){
     }
   }
 }
-
-// Завантаження маркерів з Firebase
-db.ref('markers').once('value').then(snap=>{
-  snap.forEach(childSnap=>addMarkerToMap(childSnap.key, childSnap.val()));
-  fitMapToMarkers();
-});
 db.ref('markers').on('child_added',snap=>{
   if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val());
-  fitMapToMarkers();
 });
 db.ref('markers').on('child_changed',snap=>{
   if(markers[snap.key]) map.removeLayer(markers[snap.key]);
   addMarkerToMap(snap.key,snap.val());
-  fitMapToMarkers();
 });
 db.ref('markers').on('child_removed',snap=>{
   if(markers[snap.key]){ map.removeLayer(markers[snap.key]); delete markers[snap.key]; }
-  fitMapToMarkers();
+});
+
+// === Автоцентрування на всі точки при завантаженні ===
+db.ref('markers').once('value').then(snap=>{
+  const data = snap.val();
+  const latlngs = [];
+  for(const key in data) latlngs.push([data[key].lat, data[key].lng]);
+  if(latlngs.length>0) map.fitBounds(latlngs,{padding:[10,50]});
 });
 
 // === Адмін ===
@@ -279,7 +284,7 @@ document.getElementById('loginSubmit').onclick=()=>{
     document.getElementById('adminBtn').textContent="🚪";
     enableAdminFunctions();
     refreshAdminClicks();
-    document.getElementById('coordSearch').style.display='flex'; 
+    document.getElementById('coordSearch').style.display='flex';
   } else {
     loginMsg.style.color='red';
     loginMsg.innerText="❌ Ви не адмін";
@@ -300,12 +305,10 @@ function enableAdminFunctions(){
     document.getElementById('addMarkerBox').style.display='flex';
   });
 }
-
 document.getElementById('addMarkerCancel').onclick=()=>{
   document.getElementById('addMarkerBox').style.display='none';
   pendingLatLng=null;
 };
-
 document.getElementById('addMarkerConfirm').onclick=()=>{
   const title=document.getElementById('markerTitle').value.trim();
   const desc=document.getElementById('markerDesc').value.trim();
@@ -313,7 +316,6 @@ document.getElementById('addMarkerConfirm').onclick=()=>{
   if(!pendingLatLng || !title || !desc){ alert("Заповніть усі поля!"); return; }
 
   const newData = {lat:pendingLatLng.lat, lng:pendingLatLng.lng, title, desc};
-
   if(file){
     const reader=new FileReader();
     reader.onload=e=>{
@@ -326,7 +328,6 @@ document.getElementById('addMarkerConfirm').onclick=()=>{
     addMarkerToMap('temp-'+Date.now(), newData);
     db.ref('markers').push(newData);
   }
-
   document.getElementById('addMarkerBox').style.display='none';
   document.getElementById('markerTitle').value="";
   document.getElementById('markerDesc').value="";
@@ -368,7 +369,7 @@ document.getElementById('editSave').onclick=()=>{
   }
 };
 
-// === Пошук координат (лише для адміна) ===
+// === Пошук координат ===
 document.getElementById('goToCoord').onclick=()=>{
   const lat=parseFloat(document.getElementById('latInput').value);
   const lng=parseFloat(document.getElementById('lngInput').value);
