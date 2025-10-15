@@ -30,44 +30,89 @@
   will-change: transform;
 }
 
-/* 🔹 Іконка користувачів */
-.user-counter {
-  position: fixed;
-  top: 30px; /* трохи нижче бігучої */
-  right: 6px;
-  z-index: 8000;
-  display: flex;
-  align-items: center;
-  background: transparent; /* прозорий фон */
-  color: #8bb5d6;
-  padding: 0;
-  border-radius: 0;
-  font-size: 12px;
-  font-weight: bold;
-  box-shadow: none; /* без тіні */
-}
-
-
-.user-counter svg {
-  width: 20px;
-  height: 20px;
-  margin-right: 6px;
-}
-
-/* 🔹 Загальний стиль сторінки */
 body {
   margin-top: 40px;
   font-family: Roboto, sans-serif;
-  text-align: center;
-  padding: 10px;
   background: #f0f2f5;
-  overflow-x: hidden;
+  text-align: center;
 }
-/* Щоб контент не перекривався рядком */
-body {
-  margin-top: 20px;
+body { margin-top: 40px; font-family: Roboto, sans-serif; text-align: center; padding: 10px; background: #f0f2f5; overflow-x: hidden; }
+/* 🔹 Анімований градієнт + пульсуючий ефект */
+h1 {
+  font-size: 26px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #007bff, #6f42c1, #00c6ff, #ff6ec7);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 5px 0 10px 0;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  animation: gradientShift 6s ease infinite, fadeInDown 1s ease-out, pulseGlow 2s ease-in-out infinite;
 }
-h1{font-size:18px;margin:5px 0;}
+
+/* Ефект плавної появи */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Анімація переливу градієнту */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Пульсуючий світловий ефект */
+@keyframes pulseGlow {
+  0% { text-shadow: 0 2px 6px rgba(0,0,0,0.2), 0 0 5px rgba(255,255,255,0.3); }
+  50% { text-shadow: 0 2px 6px rgba(0,0,0,0.2), 0 0 15px rgba(255,255,255,0.6); }
+  100% { text-shadow: 0 2px 6px rgba(0,0,0,0.2), 0 0 5px rgba(255,255,255,0.3); }
+}
+
+/* 🔹 Стильне відображення імені користувача */
+#userDisplay {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 10px 0;
+  background: linear-gradient(90deg, #08050f);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 8px rgba(255,255,255,0.3);
+  animation: gradientMove 6s ease infinite, pulseScale 2s ease-in-out infinite, glowEffect 2s ease-in-out infinite;
+}
+
+/* Анімація градієнтного переливу */
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Легка пульсація та масштабування */
+@keyframes pulseScale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Легке неонове світіння */
+@keyframes glowEffect {
+  0% { text-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 8px rgba(255,255,255,0.3); }
+  50% { text-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 16px rgba(255,255,255,0.6); }
+  100% { text-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 8px rgba(255,255,255,0.3); }
+}
+
+
 h2{font-size:16px;margin:5px 0;}
 p{font-size:14px;margin:5px 0;color:#0056b3;}
 textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radius:4px;border:1px solid #ccc;margin-bottom:5px;}
@@ -115,12 +160,6 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
   <div class="marquee-track" id="marqueeTrack">
     🚧 Додаток розвивається. Можливі тимчасові зміни у функціоналі, дизайні або структурі сторінок. 💡 Нові можливості, покращення продуктивності та виправлення помилок додаються поступово. 🚀 Слідкуйте за новинами — попереду багато цікавого!
   </div>
-</div>
-
-<!-- 🔹 Лічильник користувачів -->
-<div class="user-counter">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-  <span id="userCount">0</span>
 </div>
 
 <div id="loadingSpinner"></div>
@@ -184,28 +223,38 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
-const marquee = document.getElementById("marqueeTrack");
-const userCountSpan = document.getElementById("userCount");
+
+  const marquee = document.getElementById("marqueeTrack");
 
 function startMarquee() {
   const textWidth = marquee.offsetWidth;
   const screenWidth = window.innerWidth;
-  const baseSpeed = 60;
+  
+  // Розрахунок швидкості: чим довший текст — тим швидше рух
+  const baseSpeed = 60; // чим більше число — тим повільніше
   const duration = (textWidth + screenWidth) / baseSpeed;
+
+  // Початкова позиція — правий край
   marquee.animate(
     [
       { transform: `translateX(${screenWidth}px)` },
       { transform: `translateX(-${textWidth}px)` }
     ],
-    { duration: duration*1000, iterations: Infinity, easing: "linear" }
+    {
+      duration: duration * 1000,
+      iterations: Infinity,
+      easing: "linear"
+    }
   );
 }
+
+// Запуск після завантаження
 window.addEventListener("load", startMarquee);
-window.addEventListener("resize", ()=>{
-  marquee.getAnimations().forEach(a=>a.cancel());
+// Перезапуск при зміні розміру екрана
+window.addEventListener("resize", () => {
+  marquee.getAnimations().forEach(a => a.cancel());
   startMarquee();
 });
-
 // ================= Spinner =================
 function showSpinner(){document.getElementById('loadingSpinner').style.display='block';}
 function hideSpinner(){document.getElementById('loadingSpinner').style.display='none';}
@@ -239,7 +288,6 @@ window.onload=function(){
     checkBlockedStatus();
     if(isAdmin) loadUsers();
   }
-  updateUserCount();
 }
 
 // ================= Modal =================
@@ -312,7 +360,6 @@ function logout(){
     document.getElementById('mapLink').style.display='none';
     document.getElementById('logoutBtn').style.display='none';
     document.getElementById('userDisplay').innerText='';
-    updateUserCount();
     showModal("Ви вийшли з акаунту!");
   });
 }
@@ -333,7 +380,6 @@ function enableUI(){
   mapLink.target="_self";
   updateCounters();
   checkBlockedStatus();
-  updateUserCount();
 }
 
 // ================= Лайки/Дизлайки =================
@@ -357,7 +403,6 @@ function vote(type){
       return d;
     });
     markVoted(type);
-    updateUserCount();
   });
 }
 db.ref('votes').on('value', snap=>{
@@ -387,7 +432,6 @@ function sendComment(){
   db.ref('comments').push(comment);
   document.getElementById('commentInput').value='';
   showModal("Коментар відправлено!");
-  updateUserCount();
 }
 
 db.ref('comments').on('value',snap=>{
@@ -397,12 +441,14 @@ db.ref('comments').on('value',snap=>{
   for(let key in comments){
     const c=comments[key];
     const userLiked = c.likes && c.likes[currentUserUID];
+
     let likesText = '';
     if(c.likes){
       for(let uid in c.likes){
         likesText += `${c.likes[uid].name} (${c.likes[uid].time}) `;
       }
     }
+
     const div = document.createElement('div');
     div.className = 'comment' + (c.blocked ? ' blocked-user' : '');
     div.innerHTML = `
@@ -431,6 +477,7 @@ db.ref('comments').on('value',snap=>{
 function likeComment(commentId){
   if(!currentUserUID) return showModal("Ви не авторизовані!");
   if(blocked) return showModal("Вас заблоковано!");
+
   const commentRef = db.ref('comments/' + commentId);
   commentRef.once('value').then(snap => {
     const c = snap.val();
@@ -439,14 +486,19 @@ function likeComment(commentId){
     c.likes[currentUserUID] = { name: currentUserName, time: new Date().toLocaleString() };
     c.likesCount = (c.likesCount || 0) + 1;
     commentRef.update({ likes: c.likes, likesCount: c.likesCount });
-    updateUserCount();
   });
 }
 
 // ================= Адмін =================
-function blockComment(id,state){ db.ref('comments/'+id+'/blocked').set(state); updateUserCount(); }
-function deleteComment(id){ db.ref('comments/'+id).remove(); updateUserCount(); }
-function saveUserInDB(){ db.ref('users/'+currentUserUID).set({name:currentUserName,isAdmin,isBlocked:false}); updateUserCount(); }
+function blockComment(id,state){
+  db.ref('comments/'+id+'/blocked').set(state);
+}
+function deleteComment(id){
+  db.ref('comments/'+id).remove();
+}
+function saveUserInDB(){
+  db.ref('users/'+currentUserUID).set({name:currentUserName,isAdmin,isBlocked:false});
+}
 function loadUsers(){
   db.ref('users').on('value',snap=>{
     const users=snap.val();
@@ -463,7 +515,9 @@ function loadUsers(){
     document.getElementById('usersSection').style.display='block';
   });
 }
-function toggleBlock(uid,state){ db.ref('users/'+uid+'/isBlocked').set(state); updateUserCount(); }
+function toggleBlock(uid,state){
+  db.ref('users/'+uid+'/isBlocked').set(state);
+}
 function checkBlockedStatus(){
   if(!currentUserUID)return;
   db.ref('users/'+currentUserUID+'/isBlocked').on('value',s=>{
@@ -477,41 +531,9 @@ function checkBlockedStatus(){
     }
   });
 }
-
-// ================= Лічильник унікальних користувачів =================
-function updateUserCount(){
-  const userIDs = new Set();
-  // Користувачі з users
-  db.ref('users').once('value').then(snap=>{
-    const users = snap.val();
-    if(users){
-      for(let uid in users){
-        if(!users[uid].isBlocked) userIDs.add(uid);
-      }
-    }
-    // Користувачі, які голосували
-    db.ref('votes/users').once('value').then(vSnap=>{
-      const votes = vSnap.val();
-      if(votes){
-        for(let uid in votes){
-          userIDs.add(uid);
-        }
-      }
-      // Користувачі, які писали коментарі
-      db.ref('comments').once('value').then(cSnap=>{
-        const comments = cSnap.val();
-        if(comments){
-          for(let key in comments){
-            if(!comments[key].blocked) userIDs.add(comments[key].uid);
-          }
-        }
-        userCountSpan.innerText = userIDs.size;
-      });
-    });
-  });
-}
 </script>
 
 <div class="version">Бета-Версія 1.1.0</div>
+
 </body>
 </html>
