@@ -134,28 +134,40 @@ document.getElementById('locateBtn').onclick=()=>{
   } else alert("Геолокація не підтримується вашим браузером.");
 };
 
-// Лічильник переглядів
+// 🔹 Лічильники: перегляди + точки
 const mapViewsRef=db.ref('mapViews');
+const markersRef=db.ref('markers');
 mapViewsRef.transaction(c=>(c||0)+1);
+
 const counterDiv=L.control({position:'topright'});
-counterDiv.onAdd=function(){ this._div=L.DomUtil.create('div','map-counter'); this.update(0); return this._div; };
-counterDiv.update=function(val){ this._div.innerHTML=`👁️ ${val}`; };
+counterDiv.onAdd=function(){ 
+  this._div=L.DomUtil.create('div','map-counter'); 
+  this.update(0,0); 
+  return this._div; 
+};
+counterDiv.update=function(views, count){ 
+  this._div.innerHTML=`👁️ ${views} | 📌 ${count}`; 
+};
 counterDiv.addTo(map);
-mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0));
+
+let markerCount = 0;
+mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0, markerCount));
+markersRef.on('value',snap=>{
+  markerCount = snap.numChildren();
+  mapViewsRef.once('value').then(vsnap=>{
+    counterDiv.update(vsnap.val()||0, markerCount);
+  });
+});
 
 // Маркери
 const markers={};
 function addMarkerToMap(id,data){
   const icon = data.icon ? L.icon({iconUrl: data.icon, iconSize:[35,35], iconAnchor:[20,40]}) : undefined;
 
-  // Попап
   const popupDiv=document.createElement('div');
   popupDiv.innerHTML=`<div style="text-align:center;"><b style="color:#007bff;">${data.title}</b><br>${data.desc}</div>`;
 
-  // Текст для share (без координат)
   const shareText = `📍 ${data.title}\n${data.desc}`;
-
-  // Share кнопка
   const btnContainer=document.createElement('div'); 
   btnContainer.className='share-btn-container';
   const shareBtn=document.createElement('div'); 
@@ -173,78 +185,142 @@ function addMarkerToMap(id,data){
   btnContainer.appendChild(shareBtn);
   popupDiv.appendChild(btnContainer);
 
-  const marker=L.marker([data.lat,data.lng], icon?{icon}:{});
-  marker.addTo(map).bindPopup(popupDiv);
+  const marker=L.marker([data.lat,data.lng], icon?{icon}:{}).addTo(map).bindPopup(popupDiv);
   markers[id]=marker;
 
   if(isAdmin){ marker.on('click',()=>openEditWindow(id,data)); }
 }
 
-// Firebase обробка
-db.ref('markers').on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
-db.ref('markers').on('child_changed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); addMarkerToMap(snap.key,snap.val()); } });
-db.ref('markers').on('child_removed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); delete markers[snap.key]; } });
+// Firebase синхронізація
+markersRef.on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
+markersRef.on('child_changed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); addMarkerToMap(snap.key,snap.val()); } });
+markersRef.on('child_removed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); delete markers[snap.key]; } });
 
 // Автоцентрування
-db.ref('markers').once('value').then(snap=>{
+markersRef.once('value').then(snap=>{
   const data=snap.val();
   const latlngs=[];
   for(const key in data) latlngs.push([data[key].lat,data[key].lng]);
   if(latlngs.length>0) map.fitBounds(latlngs,{padding:[10,50]});
 });
 
-// Адмін
+// Адмін режим
 let isAdmin=false;
 const ADMIN_PASSWORD="12345";
 document.getElementById('adminBtn').onclick=()=>{
-  if(isAdmin){ isAdmin=false; refreshAdminClicks(); map.off('dblclick'); document.getElementById('adminBtn').textContent="🔑"; document.getElementById('coordSearch').style.display='none'; alert("🚪 Ви вийшли з режиму адміністратора."); }
-  else document.getElementById('loginBox').style.display='flex';
+  if(isAdmin){ 
+    isAdmin=false; refreshAdminClicks(); map.off('dblclick'); 
+    document.getElementById('adminBtn').textContent="🔑"; 
+    document.getElementById('coordSearch').style.display='none'; 
+    alert("🚪 Ви вийшли з режиму адміністратора."); 
+  } else document.getElementById('loginBox').style.display='flex';
 };
 document.getElementById('loginSubmit').onclick=()=>{
-  const pass=document.getElementById('adminPass').value.trim(); const loginBox=document.getElementById('loginBox'); const loginMsg=document.getElementById('loginMsg');
-  if(pass===ADMIN_PASSWORD){ isAdmin=true; loginBox.style.display='none'; document.getElementById('adminBtn').textContent="🚪"; enableAdminFunctions(); refreshAdminClicks(); document.getElementById('coordSearch').style.display='flex'; }
-  else { loginMsg.style.color='red'; loginMsg.innerText="❌ Ви не адмін"; setTimeout(()=>{ loginMsg.innerText=""; loginBox.style.display='none'; isAdmin=false; refreshAdminClicks(); },3000); }
+  const pass=document.getElementById('adminPass').value.trim(); 
+  const loginBox=document.getElementById('loginBox'); 
+  const loginMsg=document.getElementById('loginMsg');
+  if(pass===ADMIN_PASSWORD){ 
+    isAdmin=true; loginBox.style.display='none'; 
+    document.getElementById('adminBtn').textContent="🚪"; 
+    enableAdminFunctions(); refreshAdminClicks(); 
+    document.getElementById('coordSearch').style.display='flex'; 
+  }
+  else { 
+    loginMsg.style.color='red'; 
+    loginMsg.innerText="❌ Ви не адмін"; 
+    setTimeout(()=>{ loginMsg.innerText=""; loginBox.style.display='none'; isAdmin=false; refreshAdminClicks(); },3000); 
+  }
 };
 
 // Адмін функції
 let pendingLatLng=null;
-function enableAdminFunctions(){ map.on('dblclick', e=>{ pendingLatLng=e.latlng; document.getElementById('addMarkerBox').style.display='flex'; }); }
-document.getElementById('addMarkerCancel').onclick=()=>{ document.getElementById('addMarkerBox').style.display='none'; pendingLatLng=null; };
-document.getElementById('addMarkerConfirm').onclick=()=>{
+function enableAdminFunctions(){ 
+  map.on('dblclick', e=>{ 
+    pendingLatLng=e.latlng; 
+    document.getElementById('addMarkerBox').style.display='flex'; 
+  }); 
+}
+document.getElementById('addMarkerCancel').onclick=()=>{ 
+  document.getElementById('addMarkerBox').style.display='none'; 
+  pendingLatLng=null; 
+};
+document.getElementById('addMarkerConfirm').onclick=()=>{ 
   const title=document.getElementById('markerTitle').value.trim();
   const desc=document.getElementById('markerDesc').value.trim();
   const file=document.getElementById('markerIcon').files[0];
   if(!pendingLatLng||!title||!desc){ alert("Заповніть усі поля!"); return; }
   const newData={lat:pendingLatLng.lat,lng:pendingLatLng.lng,title,desc};
-  if(file){ const reader=new FileReader(); reader.onload=e=>{ newData.icon=e.target.result; addMarkerToMap('temp-'+Date.now(),newData); db.ref('markers').push(newData); }; reader.readAsDataURL(file); }
-  else { addMarkerToMap('temp-'+Date.now(),newData); db.ref('markers').push(newData); }
-  document.getElementById('addMarkerBox').style.display='none'; document.getElementById('markerTitle').value=""; document.getElementById('markerDesc').value=""; document.getElementById('markerIcon').value=""; pendingLatLng=null;
+  if(file){ 
+    const reader=new FileReader(); 
+    reader.onload=e=>{ newData.icon=e.target.result; addMarkerToMap('temp-'+Date.now(),newData); db.ref('markers').push(newData); }; 
+    reader.readAsDataURL(file); 
+  } else { 
+    addMarkerToMap('temp-'+Date.now(),newData); 
+    db.ref('markers').push(newData); 
+  }
+  document.getElementById('addMarkerBox').style.display='none'; 
+  document.getElementById('markerTitle').value=""; 
+  document.getElementById('markerDesc').value=""; 
+  document.getElementById('markerIcon').value=""; 
+  pendingLatLng=null;
 };
 
 // Редагування точки
 let currentEditId=null;
-function openEditWindow(id,data){ currentEditId=id; document.getElementById('editTitle').value=data.title; document.getElementById('editDesc').value=data.desc; document.getElementById('editMarkerBox').style.display='flex'; }
+function openEditWindow(id,data){ 
+  currentEditId=id; 
+  document.getElementById('editTitle').value=data.title; 
+  document.getElementById('editDesc').value=data.desc; 
+  document.getElementById('editMarkerBox').style.display='flex'; 
+}
 document.getElementById('editCancel').onclick=()=>{document.getElementById('editMarkerBox').style.display='none';currentEditId=null;};
-document.getElementById('editDelete').onclick=()=>{ if(confirm("Видалити цю точку?")){ db.ref('markers/'+currentEditId).remove(); document.getElementById('editMarkerBox').style.display='none'; } };
-document.getElementById('editSave').onclick=()=>{
-  const title=document.getElementById('editTitle').value.trim(); const desc=document.getElementById('editDesc').value.trim(); const file=document.getElementById('editIcon').files[0];
+document.getElementById('editDelete').onclick=()=>{ 
+  if(confirm("Видалити цю точку?")){ 
+    db.ref('markers/'+currentEditId).remove(); 
+    document.getElementById('editMarkerBox').style.display='none'; 
+  } 
+};
+document.getElementById('editSave').onclick=()=>{ 
+  const title=document.getElementById('editTitle').value.trim(); 
+  const desc=document.getElementById('editDesc').value.trim(); 
+  const file=document.getElementById('editIcon').files[0];
   if(!title||!desc){ alert("Заповніть усі поля!"); return; }
-  if(file){ const reader=new FileReader(); reader.onload=e=>{ db.ref('markers/'+currentEditId).update({title,desc,icon:e.target.result}); document.getElementById('editMarkerBox').style.display='none'; }; reader.readAsDataURL(file); }
-  else { db.ref('markers/'+currentEditId).update({title,desc}); document.getElementById('editMarkerBox').style.display='none'; }
+  if(file){ 
+    const reader=new FileReader(); 
+    reader.onload=e=>{ 
+      db.ref('markers/'+currentEditId).update({title,desc,icon:e.target.result}); 
+      document.getElementById('editMarkerBox').style.display='none'; 
+    }; 
+    reader.readAsDataURL(file); 
+  } else { 
+    db.ref('markers/'+currentEditId).update({title,desc}); 
+    document.getElementById('editMarkerBox').style.display='none'; 
+  }
 };
 
 // Пошук координат
-document.getElementById('goToCoord').onclick=()=>{
-  const lat=parseFloat(document.getElementById('latInput').value); const lng=parseFloat(document.getElementById('lngInput').value);
+document.getElementById('goToCoord').onclick=()=>{ 
+  const lat=parseFloat(document.getElementById('latInput').value); 
+  const lng=parseFloat(document.getElementById('lngInput').value);
   if(isNaN(lat)||isNaN(lng)){ alert("Введіть правильні координати!"); return; }
   map.setView([lat,lng],15);
   let found=false;
-  for(const [id, marker] of Object.entries(markers)){ const pos=marker.getLatLng(); if(Math.abs(pos.lat-lat)<0.0001 && Math.abs(pos.lng-lng)<0.0001){ marker.openPopup(); found=true; break; } }
-  if(!found){ L.marker([lat,lng]).addTo(map).bindPopup(`📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`).openPopup(); }
+  for(const [id, marker] of Object.entries(markers)){ 
+    const pos=marker.getLatLng(); 
+    if(Math.abs(pos.lat-lat)<0.0001 && Math.abs(pos.lng-lng)<0.0001){ 
+      marker.openPopup(); found=true; break; 
+    } 
+  }
+  if(!found) alert("Поруч немає точки.");
 };
 
-// Допоміжна функція для адмін-кліків
-function refreshAdminClicks(){ for(const [id,marker] of Object.entries(markers)){ marker.off('click'); if(isAdmin){ db.ref('markers/'+id).once('value').then(snap=>{ const data=snap.val(); marker.on('click',()=>openEditWindow(id,data)); }); } } }
+// Скидання подій для користувачів
+function refreshAdminClicks(){ 
+  for(const [id, marker] of Object.entries(markers)){ 
+    marker.off('click'); 
+    if(isAdmin){ marker.on('click',()=>openEditWindow(id,{title:marker.getPopup()._content,title:marker.getPopup()._content})); } 
+  } 
+}
 </script>
 </body>
 </html>
