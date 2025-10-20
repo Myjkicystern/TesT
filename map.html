@@ -146,7 +146,6 @@ markersRef.on('value',snap=>{
 
 // Маркери та адмін функції
 const markers = {};
-
 function addMarkerToMap(id, data) {
   const icon = data.icon ? L.icon({ iconUrl: data.icon, iconSize: [35,35], iconAnchor:[20,40] }) : undefined;
   const popupDiv = document.createElement('div');
@@ -164,8 +163,7 @@ function addMarkerToMap(id, data) {
   btnContainer.appendChild(shareBtn);
   popupDiv.appendChild(btnContainer);
 
-  const marker=L.marker([data.lat,data.lng], icon?{icon}:{});
-  marker.addTo(map).bindPopup(popupDiv);
+  const marker=L.marker([data.lat,data.lng], icon?{icon}:{}).addTo(map).bindPopup(popupDiv);
   marker.options.data = data;
   markers[id]=marker;
   if(isAdmin) marker.on('click', ()=>openEditWindow(id, marker.options.data));
@@ -219,7 +217,7 @@ document.getElementById('loginSubmit').onclick=()=>{
   }
 };
 
-// Адмін функції
+// ----------------- ДОБАВЛЕННЯ -----------------
 let pendingLatLng=null;
 function enableAdminFunctions(){ 
   map.on('dblclick', e=>{ 
@@ -232,27 +230,40 @@ document.getElementById('addMarkerCancel').onclick=()=>{
   pendingLatLng=null; 
 };
 document.getElementById('addMarkerConfirm').onclick=()=>{ 
+  if(!isAdmin){ alert("Тільки адмін може додавати точки!"); return; }
+
   const title=document.getElementById('markerTitle').value.trim();
   const desc=document.getElementById('markerDesc').value.trim();
   const file=document.getElementById('markerIcon').files[0];
+
   if(!pendingLatLng||!title||!desc){ alert("Заповніть усі поля!"); return; }
-  const newData={lat:pendingLatLng.lat,lng:pendingLatLng.lng,title,desc};
-  if(file){ 
-    const reader=new FileReader(); 
-    reader.onload=e=>{ newData.icon=e.target.result; addMarkerToMap('temp-'+Date.now(),newData); db.ref('markers').push(newData); }; 
-    reader.readAsDataURL(file); 
-  } else { 
-    addMarkerToMap('temp-'+Date.now(),newData); 
-    db.ref('markers').push(newData); 
+
+  const newData={lat: pendingLatLng.lat, lng: pendingLatLng.lng, title, desc};
+
+  const pushToFirebase = (data) => {
+    const newRef = db.ref('markers').push();
+    newRef.set(data);
   }
-  document.getElementById('addMarkerBox').style.display='none'; 
-  document.getElementById('markerTitle').value=""; 
-  document.getElementById('markerDesc').value=""; 
-  document.getElementById('markerIcon').value=""; 
+
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      newData.icon=e.target.result;
+      pushToFirebase(newData);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    pushToFirebase(newData);
+  }
+
+  document.getElementById('addMarkerBox').style.display='none';
+  document.getElementById('markerTitle').value="";
+  document.getElementById('markerDesc').value="";
+  document.getElementById('markerIcon').value="";
   pendingLatLng=null;
 };
 
-// Редагування точки
+// ----------------- РЕДАГУВАННЯ -----------------
 let currentEditId=null;
 function openEditWindow(id,data){ 
   currentEditId=id; 
@@ -272,33 +283,30 @@ document.getElementById('editSave').onclick=()=>{
   const desc=document.getElementById('editDesc').value.trim(); 
   const file=document.getElementById('editIcon').files[0];
   if(!title||!desc){ alert("Заповніть усі поля!"); return; }
-  if(file){ 
-    const reader=new FileReader(); 
-    reader.onload=e=>{ 
-      db.ref('markers/'+currentEditId).update({title,desc,icon:e.target.result}); 
-      document.getElementById('editMarkerBox').style.display='none'; 
-    }; 
-    reader.readAsDataURL(file); 
-  } else { 
-    db.ref('markers/'+currentEditId).update({title,desc}); 
-    document.getElementById('editMarkerBox').style.display='none'; 
-  }
+
+  const updateMarker = (data)=>{ db.ref('markers/'+currentEditId).update(data); document.getElementById('editMarkerBox').style.display='none'; }
+
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>{ updateMarker({title, desc, icon:e.target.result}); };
+    reader.readAsDataURL(file);
+  } else { updateMarker({title, desc}); }
 };
 
-// Пошук координат
-document.getElementById('goToCoord').onclick=()=>{ 
-  const lat=parseFloat(document.getElementById('latInput').value); 
-  const lng=parseFloat(document.getElementById('lngInput').value);
-  if(isNaN(lat)||isNaN(lng)){ alert("Введіть правильні координати!"); return; }
-  map.setView([lat,lng],15);
-  let found=false;
-  for(const [id, marker] of Object.entries(markers)){ 
-    const pos=marker.getLatLng(); 
-    if(Math.abs(pos.lat-lat)<0.0001 && Math.abs(pos.lng-lng)<0.0001){ 
-      marker.openPopup(); found=true; break; 
-    } 
-  }
-  if(!found) alert("Поруч немає точки.");
+// ----------------- ПОШУК / ПРЕДПРОСМОТР -----------------
+let tempAddMarker = null;
+document.getElementById('goToCoord').onclick = () => { 
+  const lat = parseFloat(document.getElementById('latInput').value); 
+  const lng = parseFloat(document.getElementById('lngInput').value);
+  if (isNaN(lat) || isNaN(lng)) { alert("Введіть правильні координати!"); return; }
+
+  map.setView([lat,lng], 15);
+
+  if(tempAddMarker) tempAddMarker.setLatLng([lat,lng]);
+  else tempAddMarker = L.marker([lat,lng], {draggable:true}).addTo(map)
+    .bindPopup("Точка для додавання").openPopup();
+
+  pendingLatLng = {lat, lng};
 };
 </script>
 </body>
