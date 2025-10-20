@@ -8,41 +8,30 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
 html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { height:100%; width:100%; }
-
-#layerBtn, #adminBtn, #locateBtn {
-  position: fixed; border: none; cursor: pointer; z-index: 4000; font-size: 18px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.3);
-}
+#layerBtn, #adminBtn, #locateBtn { position: fixed; border: none; cursor: pointer; z-index: 4000; font-size: 18px; box-shadow:0 2px 6px rgba(0,0,0,0.3);}
 #layerBtn { bottom:15px; left:15px; padding:10px 15px; border-radius:8px; background:#007bff; color:#fff; }
 #adminBtn { bottom:15px; right:15px; width:50px; height:50px; border-radius:50%; background:#28a745; color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center; }
 #locateBtn { bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; background:#17a2b8; display:flex; align-items:center; justify-content:center; transition: background 0.3s, transform 0.2s; }
 #locateBtn:hover { background:#138496; transform:scale(1.1); }
 #locateBtn::before { content:''; width:12px; height:12px; background:white; border-radius:50%; }
-
 .popup-box { background:#fff; padding:20px; border-radius:8px; text-align:center; width:280px; }
 .popup-box input, .popup-box textarea { width:100%; padding:8px; margin-top:8px; border:1px solid #ccc; border-radius:5px; font-size:14px; }
 .popup-box button { margin-top:10px; padding:8px 15px; background:#007bff; border:none; border-radius:5px; color:#fff; cursor:pointer; }
 .popup-box button:hover { background:#0056b3; }
 .popup-box .cancel { background:#dc3545; }
-
 .map-counter { background:rgba(255,255,255,0.8); padding:5px 10px; border-radius:8px; margin:10px; }
-
 #loginBox, #addMarkerBox, #editMarkerBox { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:5000; display:none; }
-
 #coordSearch { display:none; position:fixed; top:10px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.9); padding:8px 12px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.3); z-index:4000; }
 #coordSearch input { width:90px; padding:6px; margin:0 5px; border:1px solid #ccc; border-radius:6px; font-size:14px; }
 #coordSearch button { padding:6px 10px; border:none; background:#007bff; color:#fff; border-radius:6px; font-size:14px; cursor:pointer; }
 #coordSearch button:hover { background:#0056b3; }
-
 #author { position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.85); color: #333; padding: 4px 10px; border-radius: 8px; font-size: 10px; z-index: 4000; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
 .share-btn-container { display:flex; justify-content:center; margin-top:5px; }
 .share-btn { display:flex; align-items:center; gap:4px; padding:3px 6px; border-radius:5px; font-size:12px; color:#fff; cursor:pointer; background:#25D366; }
 </style>
@@ -52,7 +41,6 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 <button id="layerBtn">🗺️</button>
 <button id="adminBtn">🔑</button>
 <button id="locateBtn" title="Моє місце"></button>
-
 <div id="author">© 2025 Автор: Андрій Мочурад</div>
 
 <!-- Вхід -->
@@ -134,11 +122,10 @@ document.getElementById('locateBtn').onclick=()=>{
   } else alert("Геолокація не підтримується вашим браузером.");
 };
 
-// 🔹 Лічильники: перегляди + точки
+// Лічильники
 const mapViewsRef=db.ref('mapViews');
 const markersRef=db.ref('markers');
 mapViewsRef.transaction(c=>(c||0)+1);
-
 const counterDiv=L.control({position:'topright'});
 counterDiv.onAdd=function(){ 
   this._div=L.DomUtil.create('div','map-counter'); 
@@ -154,41 +141,41 @@ let markerCount = 0;
 mapViewsRef.on('value',snap=>counterDiv.update(snap.val()||0, markerCount));
 markersRef.on('value',snap=>{
   markerCount = snap.numChildren();
-  mapViewsRef.once('value').then(vsnap=>{
-    counterDiv.update(vsnap.val()||0, markerCount);
-  });
+  mapViewsRef.once('value').then(vsnap=>{ counterDiv.update(vsnap.val()||0, markerCount); });
 });
 
-// Маркери
-const markers={};
-function addMarkerToMap(id,data){
-  const icon = data.icon ? L.icon({iconUrl: data.icon, iconSize:[35,35], iconAnchor:[20,40]}) : undefined;
+// Маркери та адмін функції
+const markers = {};
 
-  const popupDiv=document.createElement('div');
-  popupDiv.innerHTML=`<div style="text-align:center;"><b style="color:#007bff;">${data.title}</b><br>${data.desc}</div>`;
-
+function addMarkerToMap(id, data) {
+  const icon = data.icon ? L.icon({ iconUrl: data.icon, iconSize: [35,35], iconAnchor:[20,40] }) : undefined;
+  const popupDiv = document.createElement('div');
+  popupDiv.innerHTML = `<div style="text-align:center;"><b style="color:#007bff;">${data.title}</b><br>${data.desc}</div>`;
   const shareText = `📍 ${data.title}\n${data.desc}`;
-  const btnContainer=document.createElement('div'); 
+  const btnContainer = document.createElement('div'); 
   btnContainer.className='share-btn-container';
-  const shareBtn=document.createElement('div'); 
+  const shareBtn = document.createElement('div'); 
   shareBtn.className='share-btn'; 
   shareBtn.textContent='Поділитися';
   shareBtn.onclick=async()=>{
-    if(navigator.share){
-      try{ await navigator.share({text: shareText}); } 
-      catch(err){ alert("Помилка при спробі поділитися"); }
-    } else { 
-      navigator.clipboard.writeText(shareText); 
-      alert("Текст скопійовано в буфер обміну"); 
-    }
+    if(navigator.share){ try{ await navigator.share({text:shareText}); } catch(err){ alert("Помилка при шарингу"); } }
+    else { navigator.clipboard.writeText(shareText); alert("Текст скопійовано"); }
   };
   btnContainer.appendChild(shareBtn);
   popupDiv.appendChild(btnContainer);
 
-  const marker=L.marker([data.lat,data.lng], icon?{icon}:{}).addTo(map).bindPopup(popupDiv);
+  const marker=L.marker([data.lat,data.lng], icon?{icon}:{});
+  marker.addTo(map).bindPopup(popupDiv);
+  marker.options.data = data;
   markers[id]=marker;
+  if(isAdmin) marker.on('click', ()=>openEditWindow(id, marker.options.data));
+}
 
-  if(isAdmin){ marker.on('click',()=>openEditWindow(id,data)); }
+function refreshAdminClicks(){ 
+  for(const [id, marker] of Object.entries(markers)){ 
+    marker.off('click'); 
+    if(isAdmin){ marker.on('click',()=>openEditWindow(id, marker.options.data)); } 
+  } 
 }
 
 // Firebase синхронізація
@@ -313,14 +300,6 @@ document.getElementById('goToCoord').onclick=()=>{
   }
   if(!found) alert("Поруч немає точки.");
 };
-
-// Скидання подій для користувачів
-function refreshAdminClicks(){ 
-  for(const [id, marker] of Object.entries(markers)){ 
-    marker.off('click'); 
-    if(isAdmin){ marker.on('click',()=>openEditWindow(id,{title:marker.getPopup()._content,title:marker.getPopup()._content})); } 
-  } 
-}
 </script>
 </body>
 </html>
