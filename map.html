@@ -242,7 +242,7 @@ markersRef.once('value').then(snap=>{
   const data=snap.val();
   const latlngs=[];
   for(const key in data) latlngs.push([data[key].lat,data[key].lng]);
-  if(latlngs.length>0) map.fitBounds(latlngs,{padding:[10,50]});
+  if(latlngs.length>0) map.fitBounds(latlngs,{padding:[-50,10]});
 });
 
 // Адмін режим
