@@ -13,9 +13,32 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
+  /* Екран завантаження */
+#loader {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255,255,255,0.9);
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  z-index: 10000;
+  font-family: sans-serif;
+  font-size: 18px;
+  color: #007bff;
+}
+.loader-spinner {
+  width: 60px; height: 60px;
+  border: 6px solid #ccc;
+  border-top-color: #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
 html, body { height:100%; margin:0; font-family:sans-serif; }
 #map { height:100%; width:100%; }
-#layerBtn, #adminBtn, #locateBtn { position: fixed; border: none; cursor: pointer; z-index: 4000; font-size: 18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
+#layerBtn, #adminBtn, #locateBtn { position: fixed; border: none; cursor: pointer; z-index: 4000; font-size: 18px; box-shadow:0 2px 6px rgba(0,0,0,0.3);}
 #layerBtn { bottom:15px; left:15px; padding:10px 15px; border-radius:8px; background:#007bff; color:#fff; }
 #adminBtn { bottom:15px; right:15px; width:50px; height:50px; border-radius:50%; background:#28a745; color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center; }
 #locateBtn { bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; background:#17a2b8; display:flex; align-items:center; justify-content:center; transition: background 0.3s, transform 0.2s; }
@@ -38,6 +61,14 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 </style>
 </head>
 <body>
+
+  <div id="loader">
+  <div class="loader-spinner"></div>
+  <div>Завантаження мапи...</div>
+</div>
+
+
+
 <div id="map"></div>
 <button id="layerBtn">🗺️</button>
 <button id="adminBtn">🔑</button>
@@ -87,7 +118,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 </div>
 
 <script>
-// ---------------- Firebase ----------------
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAUUgaIIozN86glDv5jgT2zhH5Ob1vOt6Y",
   authDomain: "my-map-project-5c821.firebaseapp.com",
@@ -100,7 +131,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ---------------- Карта ----------------
+// Карта
 const map = L.map('map').setView([49,31],6);
 const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {maxZoom:20, subdomains:['mt0','mt1','mt2','mt3']});
@@ -111,7 +142,7 @@ document.getElementById('layerBtn').onclick=()=>{
   isSatellite=!isSatellite;
 };
 
-// ---------------- Геолокація ----------------
+// Геолокація
 document.getElementById('locateBtn').onclick=()=>{
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(pos=>{
@@ -119,15 +150,14 @@ document.getElementById('locateBtn').onclick=()=>{
       map.setView([latitude, longitude], 15);
       if(window.userMarker){ window.userMarker.setLatLng([latitude,longitude]); }
       else { window.userMarker = L.circleMarker([latitude,longitude],{radius:8,color:'#fff',fillColor:'#3399ff',fillOpacity:0.8}).addTo(map).bindPopup("Моє місце").openPopup(); }
-    }, ()=>alert("Не вдалося визначити місцезнаходження."), {enableHighAccuracy:true});
+    }, err=>alert("Не вдалося визначити місцезнаходження."), {enableHighAccuracy:true});
   } else alert("Геолокація не підтримується вашим браузером.");
 };
 
-// ---------------- Лічильники ----------------
+// Лічильники
 const mapViewsRef=db.ref('mapViews');
 const markersRef=db.ref('markers');
 mapViewsRef.transaction(c=>(c||0)+1);
-
 const counterDiv=L.control({position:'topright'});
 counterDiv.onAdd=function(){ 
   this._div=L.DomUtil.create('div','map-counter'); 
@@ -146,7 +176,7 @@ markersRef.on('value',snap=>{
   mapViewsRef.once('value').then(vsnap=>{ counterDiv.update(vsnap.val()||0, markerCount); });
 });
 
-// ---------------- Маркери ----------------
+// Маркери та адмін функції
 const markers = {};
 function addMarkerToMap(id, data) {
   const icon = data.icon ? L.icon({ iconUrl: data.icon, iconSize: [35,35], iconAnchor:[20,40] }) : undefined;
@@ -178,11 +208,23 @@ function refreshAdminClicks(){
   } 
 }
 
+// Firebase синхронізація
 markersRef.on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
 markersRef.on('child_changed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); addMarkerToMap(snap.key,snap.val()); } });
 markersRef.on('child_removed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); delete markers[snap.key]; } });
 
-// ---------------- Автоцентрування ----------------
+// Показуємо loader
+const loader = document.getElementById('loader');
+loader.style.display = 'flex';
+
+// Коли точки завантажилися — ховаємо loader
+markersRef.once('value').then(snap => {
+  loader.style.display = 'none';
+});
+
+
+
+// Автоцентрування
 markersRef.once('value').then(snap=>{
   const data=snap.val();
   const latlngs=[];
@@ -190,7 +232,7 @@ markersRef.once('value').then(snap=>{
   if(latlngs.length>0) map.fitBounds(latlngs,{padding:[10,50]});
 });
 
-// ---------------- Адмін режим ----------------
+// Адмін режим
 let isAdmin=false;
 const ADMIN_PASSWORD="12345";
 document.getElementById('adminBtn').onclick=()=>{
@@ -218,7 +260,7 @@ document.getElementById('loginSubmit').onclick=()=>{
   }
 };
 
-// ---------------- Додавання точки ----------------
+// ----------------- ДОБАВЛЕННЯ -----------------
 let pendingLatLng=null;
 function enableAdminFunctions(){ 
   map.on('dblclick', e=>{ 
@@ -241,19 +283,20 @@ document.getElementById('addMarkerConfirm').onclick=()=>{
 
   const newData={lat: pendingLatLng.lat, lng: pendingLatLng.lng, title, desc};
 
+  const pushToFirebase = (data) => {
+    const newRef = db.ref('markers').push();
+    newRef.set(data);
+  }
+
   if(file){
     const reader=new FileReader();
     reader.onload=e=>{
       newData.icon=e.target.result;
-      db.ref('markers').push(newData)
-        .then(()=>{ console.log("Маркер додано з іконкою"); })
-        .catch(err=>console.error("Помилка:",err));
+      pushToFirebase(newData);
     };
     reader.readAsDataURL(file);
   } else {
-    db.ref('markers').push(newData)
-      .then(()=>{ console.log("Маркер додано"); })
-      .catch(err=>console.error("Помилка:",err));
+    pushToFirebase(newData);
   }
 
   document.getElementById('addMarkerBox').style.display='none';
@@ -263,7 +306,7 @@ document.getElementById('addMarkerConfirm').onclick=()=>{
   pendingLatLng=null;
 };
 
-// ---------------- Редагування ----------------
+// ----------------- РЕДАГУВАННЯ -----------------
 let currentEditId=null;
 function openEditWindow(id,data){ 
   currentEditId=id; 
@@ -293,7 +336,7 @@ document.getElementById('editSave').onclick=()=>{
   } else { updateMarker({title, desc}); }
 };
 
-// ---------------- Пошук ----------------
+// ----------------- ПОШУК / ПРЕДПРОСМОТР -----------------
 let tempAddMarker = null;
 document.getElementById('goToCoord').onclick = () => { 
   const lat = parseFloat(document.getElementById('latInput').value); 
