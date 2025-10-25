@@ -23,9 +23,33 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 #layerBtn, #adminBtn, #locateBtn { position: fixed; border:none; cursor:pointer; z-index:4000; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
 #layerBtn { bottom:15px; left:15px; padding:10px 15px; border-radius:8px; background:#007bff; color:#fff; }
 #adminBtn { bottom:15px; right:15px; width:50px; height:50px; border-radius:50%; background:#28a745; color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center; }
-#locateBtn { bottom:80px; right:15px; width:50px; height:50px; border-radius:50%; background:#17a2b8; display:flex; align-items:center; justify-content:center; transition: background 0.3s, transform 0.2s; }
-#locateBtn:hover { background:#138496; transform:scale(1.1); }
-#locateBtn::before { content:''; width:12px; height:12px; background:white; border-radius:50%; }
+#locateBtn {
+  bottom: 80px;
+  right: 15px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #17a2b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  z-index: 4000;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  overflow: hidden;
+}
+#locateBtn:hover {
+  background: #138496;
+  transform: scale(1.1);
+}
+#locateBtn::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+}
 
 .popup-box { background:#fff; padding:20px; border-radius:8px; text-align:center; width:280px; }
 .popup-box input, .popup-box textarea { width:100%; padding:8px; margin-top:8px; border:1px solid #ccc; border-radius:5px; font-size:14px; }
@@ -41,12 +65,77 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 #coordSearch button:hover { background:#0056b3; }
 #author { position: fixed; bottom: 5px; left:50%; transform:translateX(-50%); background: rgba(255,255,255,0.85); color:#333; padding:4px 10px; border-radius:8px; font-size:10px; z-index:4000; box-shadow:0 2px 4px rgba(0,0,0,0.2); }
 
-.share-btn-container { display:flex; justify-content:center; margin-top:5px; flex-wrap: wrap; gap:5px; }
-.share-btn { display:flex; align-items:center; gap:4px; padding:3px 6px; border-radius:5px; font-size:12px; color:#fff; cursor:pointer; }
-.share-btn.route { background:#34A853; } /* зелена для маршруту */
-.share-btn.share { background:#25D366; } /* зелена для шарингу */
+.share-btn-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
-#locate-spinner { position:absolute; width:30px; height:30px; border:4px solid rgba(255,255,255,0.5); border-top-color:#fff; border-radius:50%; animation: spin 1s linear infinite; display:none; z-index:5001; }
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 25px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  border: none;
+  font-weight: 500;
+}
+
+.share-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: white;
+}
+
+.share-btn.route {
+  background: linear-gradient(135deg, #34a853, #0f9d58);
+}
+.share-btn.route:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(52,168,83,0.4);
+}
+
+.share-btn.share {
+  background: linear-gradient(135deg, #25d366, #128c7e);
+}
+.share-btn.share:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(37,211,102,0.4);
+}
+
+
+#locate-spinner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255,255,255,0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  pointer-events: none;
+  z-index: 1;
+  transition: transform 0.3s;
+}
+
+/* активна анімація */
+#locateBtn.active #locate-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 </style>
 </head>
 <body>
@@ -56,12 +145,19 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   <div>Завантаження точок...</div>
 </div>
 
+
+
+
 <div id="map"></div>
 <button id="layerBtn">🗺️</button>
 <button id="adminBtn">🔑</button>
-<button id="locateBtn" title="Моє місце"></button>
-<div id="locate-spinner"></div>
+<!-- Кнопка геолокації -->
+<button id="locateBtn" title="Моє місце">
+  <div id="locate-spinner"></div>
+</button>
+
 <div id="author">© 2025 Автор: Андрій Мочурад</div>
+
 
 <!-- Вхід -->
 <div id="loginBox">
@@ -132,21 +228,34 @@ document.getElementById('layerBtn').onclick=()=>{
 
 // ----------------- Геолокація з анімацією -----------------
 document.getElementById('locateBtn').onclick = () => {
-  if(!navigator.geolocation){ alert("Геолокація не підтримується вашим браузером."); return; }
-  const spinner = document.getElementById('locate-spinner');
-  spinner.style.display='block';
-  const rect = document.getElementById('locateBtn').getBoundingClientRect();
-  spinner.style.left = (rect.left + rect.width/2 - 15) + 'px';
-  spinner.style.top = (rect.top + rect.height/2 - 15) + 'px';
+  const btn = document.getElementById('locateBtn');
+  btn.classList.add('active');
+
+  if (!navigator.geolocation) {
+    alert("Геолокація не підтримується вашим браузером.");
+    btn.classList.remove('active');
+    return;
+  }
 
   navigator.geolocation.getCurrentPosition(pos => {
-    const {latitude, longitude} = pos.coords;
+    const { latitude, longitude } = pos.coords;
     map.setView([latitude, longitude], 15);
-    if(window.userMarker) window.userMarker.setLatLng([latitude,longitude]);
-    else window.userMarker = L.circleMarker([latitude,longitude],{radius:8,color:'#fff',fillColor:'#3399ff',fillOpacity:0.8}).addTo(map).bindPopup("Моє місце").openPopup();
-    spinner.style.display='none';
-  }, ()=>{ alert("Не вдалося визначити місцезнаходження."); spinner.style.display='none'; }, {enableHighAccuracy:true});
+    if (window.userMarker) window.userMarker.setLatLng([latitude, longitude]);
+    else window.userMarker = L.circleMarker([latitude, longitude], {
+      radius: 8,
+      color: '#fff',
+      fillColor: '#3399ff',
+      fillOpacity: 0.8
+    }).addTo(map).bindPopup("Моє місце").openPopup();
+
+    btn.classList.remove('active');
+  }, () => {
+    alert("Не вдалося визначити місцезнаходження.");
+    btn.classList.remove('active');
+  }, { enableHighAccuracy: true });
 };
+
+
 
 // ----------------- Лічильники -----------------
 const mapViewsRef=db.ref('mapViews');
@@ -184,28 +293,46 @@ function addMarkerToMap(id, data){
   popupDiv.style.textAlign='center';
   popupDiv.innerHTML = `<b style="color:#007bff;">${data.title}</b><br>${data.desc}`;
 
-  // Кнопка Прокласти маршрут
-  const routeBtn = document.createElement('div');
-  routeBtn.className='share-btn route';
-  routeBtn.textContent='🧭 Маршрут';
-  routeBtn.onclick = async()=>{
-    if(!window.userMarker){ alert("Спершу натисніть Моє місце"); return; }
-    const latlng = window.userMarker.getLatLng();
-    const url = `https://www.google.com/maps/dir/${latlng.lat},${latlng.lng}/${data.lat},${data.lng}`;
-    window.open(url, "_blank");
-  };
-  popupDiv.appendChild(routeBtn);
+// Контейнер для кнопок
+const btnContainer = document.createElement('div');
+btnContainer.className = 'share-btn-container';
 
-  // Кнопка Поділитися
-  const shareBtn = document.createElement('div');
-  shareBtn.className='share-btn share';
-  shareBtn.textContent='📤 Поділитися';
-  shareBtn.onclick = async()=>{
-    const shareText = `📍 ${data.title}\n${data.desc}`;
-    if(navigator.share){ try{ await navigator.share({text:shareText}); } catch(e){ alert("Помилка шарингу"); } }
-    else { navigator.clipboard.writeText(shareText); alert("Текст скопійовано"); }
-  };
-  popupDiv.appendChild(shareBtn);
+// Кнопка "Маршрут"
+const routeBtn = document.createElement('button');
+routeBtn.className = 'share-btn route';
+routeBtn.innerHTML = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.44 9.03L4.56 4.57a.75.75 0 00-.95.95l4.46 14.88a.75.75 0 001.38.13l2.78-5.09 5.09-2.78a.75.75 0 00-.13-1.38z"/></svg>
+  Маршрут
+`;
+routeBtn.onclick = async () => {
+  if (!window.userMarker) { alert("Спершу натисніть Моє місце"); return; }
+  const latlng = window.userMarker.getLatLng();
+  const url = `https://www.google.com/maps/dir/${latlng.lat},${latlng.lng}/${data.lat},${data.lng}`;
+  window.open(url, "_blank");
+};
+btnContainer.appendChild(routeBtn);
+
+// Кнопка "Поділитися"
+const shareBtn = document.createElement('button');
+shareBtn.className = 'share-btn share';
+shareBtn.innerHTML = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.48 2.48 0 000-1.39l7.02-4.11A2.5 2.5 0 1014.5 5a2.5 2.5 0 00.04.42L7.53 9.53a2.5 2.5 0 100 4.94l7.01 4.12A2.5 2.5 0 1018 16.08z"/></svg>
+  Поділитися
+`;
+shareBtn.onclick = async () => {
+  const shareText = `📍 ${data.title}\n${data.desc}`;
+  if (navigator.share) {
+    try { await navigator.share({ text: shareText }); } 
+    catch(e) { alert("Помилка шарингу"); }
+  } else {
+    navigator.clipboard.writeText(shareText);
+    alert("Текст скопійовано");
+  }
+};
+btnContainer.appendChild(shareBtn);
+
+popupDiv.appendChild(btnContainer);
+
 
   const marker = L.marker([data.lat,data.lng], icon?{icon}:{}).addTo(map).bindPopup(popupDiv);
   marker.options.data = data;
