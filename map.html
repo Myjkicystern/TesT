@@ -29,6 +29,7 @@
   font-size: 18px;
   color: #007bff;
   transition: opacity 0.4s ease, visibility 0.4s ease;
+  text-align: center;
 }
 .loader-spinner {
   width: 60px;
@@ -39,12 +40,19 @@
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
 }
+/* трохи лівіше на комп’ютерах */
 #loader-text {
-  margin-left: -35px; /* зсуває лівіше */
+  margin-left: -40px;
 }
 #loader div:last-child {
   text-align: center;
   font-weight: 600;
+}
+/* але на телефонах — по центру */
+@media (max-width: 600px) {
+  #loader-text {
+    margin-left: 0;
+  }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
