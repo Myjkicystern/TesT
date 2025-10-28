@@ -370,20 +370,26 @@ btnContainer.appendChild(shareBtn);
 popupDiv.appendChild(btnContainer);
 
 
-  const marker = L.marker([data.lat,data.lng], icon?{icon}:{}).addTo(map).bindPopup(popupDiv,{ closeButton: true, offset: [0,-35] });
+  const marker = L.marker([data.lat,data.lng], icon?{icon}:{}).addTo(map).bindPopup(popupDiv,{ closeButton: true, offset: [0,-40] });
   marker.options.data = data;
   markers[id]=marker;
 
     // ===== ДОДАЄМО ПІДСВІЧУВАННЯ =====
-  marker.on('click', () => {
-    // знімаємо обвід з усіх маркерів
-    Object.values(markers).forEach(m=>{
-      if(m.getElement()) m.getElement().style.outline = '';
-    });
-    // ставимо обвід на клікнуту точку
-    if(marker.getElement()) marker.getElement().style.outline = '4px solid white';
-    marker.getElement().style.borderRadius = '50%'; // робимо обвід круглим
+ marker.on('click', () => {
+  // знімаємо обвід з усіх маркерів
+  Object.values(markers).forEach(m=>{
+    if(m.getElement()) {
+      m.getElement().style.outline = '';
+      m.getElement().style.outlineOffset = '';
+    }
   });
+  // ставимо обвід на клікнуту точку
+  if(marker.getElement()){
+    marker.getElement().style.outline = '4px solid white'; // товщина обводу
+    marker.getElement().style.outlineOffset = '4px'; // відступ, збільшує діаметр
+    marker.getElement().style.borderRadius = '50%';
+  }
+});
 
   if(isAdmin) marker.on('click', ()=>openEditWindow(id, data));
 }
