@@ -84,12 +84,12 @@ h1 {
   font-size: 22px;
   font-weight: 900;
   margin: 10px 0;
-  background: linear-gradient(90deg, #08050f);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 8px rgba(255,255,255,0.3);
-  animation: gradientMove 6s ease infinite, pulseScale 2s ease-in-out infinite, glowEffect 2s ease-in-out infinite;
+  color: #08050f;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  background: none;
+  -webkit-background-clip: none;
+  -webkit-text-fill-color: initial;
+  animation: none; /* Вимикаємо всі анімації */
 }
 
 /* Анімація градієнтного переливу */
@@ -575,3 +575,4 @@ updateUserCount();
 
 </body>
 </html>
+
