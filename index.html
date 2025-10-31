@@ -277,12 +277,6 @@ window.addEventListener("resize", () => {
   startMarquee();
 });
 
-
-// Блокування автоматичного банера "Додати на головний екран"
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault(); // блокує автоматичний показ
-});
-
 // ================= Spinner =================
 function showSpinner(){document.getElementById('loadingSpinner').style.display='block';}
 function hideSpinner(){document.getElementById('loadingSpinner').style.display='none';}
@@ -585,4 +579,5 @@ updateUserCount();
 
 </body>
 </html>
+
 
