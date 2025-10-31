@@ -254,22 +254,32 @@ const db = firebase.database();
 // Карта
 const map = L.map('map').setView([49,31],6);
 const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-// Гібрид: супутник + назви міст, доріг і місць
-const satelliteLayer = L.tileLayer(
-  'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-  {
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-    attribution: '&copy; Google Maps'
-  }
-);
+// Замінюємо старий Google Satellite шар на Esri + підписи
+const satelliteLayer = L.layerGroup([
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 20, attribution: 'Imagery © Esri, NASA, USGS' }
+  ),
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 20, attribution: 'Labels © Esri' }
+  )
+]);
 
-let isSatellite=false;
-document.getElementById('layerBtn').onclick=()=>{ 
-  if(isSatellite){ map.removeLayer(satelliteLayer); map.addLayer(osmLayer); document.getElementById('layerBtn').textContent="🗺️"; }
-  else { map.removeLayer(osmLayer); map.addLayer(satelliteLayer); document.getElementById('layerBtn').textContent="🌍"; }
-  isSatellite=!isSatellite;
+let isSatellite = false;
+document.getElementById('layerBtn').onclick = () => { 
+  if(isSatellite){ 
+    map.removeLayer(satelliteLayer); 
+    map.addLayer(osmLayer); 
+    document.getElementById('layerBtn').textContent = "🗺️"; 
+  } else { 
+    map.removeLayer(osmLayer); 
+    map.addLayer(satelliteLayer); 
+    document.getElementById('layerBtn').textContent = "🌍"; 
+  }
+  isSatellite = !isSatellite;
 };
+
 
 // ----------------- Геолокація з анімацією -----------------
 document.getElementById('locateBtn').onclick = () => {
@@ -528,5 +538,4 @@ document.getElementById('goToCoord').onclick = () => {
 </script>
 </body>
 </html>
-
 
