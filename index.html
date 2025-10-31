@@ -558,11 +558,19 @@ function checkBlockedStatus(){
 function updateUserCount() {
   db.ref('users').on('value', snap => {
     const users = snap.val() || {};
-    const uniqueCount = Object.keys(users).length;
-    document.getElementById('uniqueUserCount').innerText = uniqueCount;
+    
+    // Створюємо Set унікальних імен
+    const uniqueNames = new Set();
+    for (let uid in users) {
+      const name = users[uid].name?.trim();
+      if (name) uniqueNames.add(name.toLowerCase()); // ігноруємо регістр
+    }
+    
+    document.getElementById('uniqueUserCount').innerText = uniqueNames.size;
   });
 }
 updateUserCount();
+
 
 
 </script>
