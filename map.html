@@ -254,7 +254,16 @@ const db = firebase.database();
 // Карта
 const map = L.map('map').setView([49,31],6);
 const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {maxZoom:20, subdomains:['mt0','mt1','mt2','mt3']});
+// Гібрид: супутник + назви міст, доріг і місць
+const satelliteLayer = L.tileLayer(
+  'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+  {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '&copy; Google Maps'
+  }
+);
+
 let isSatellite=false;
 document.getElementById('layerBtn').onclick=()=>{ 
   if(isSatellite){ map.removeLayer(satelliteLayer); map.addLayer(osmLayer); document.getElementById('layerBtn').textContent="🗺️"; }
@@ -304,30 +313,9 @@ counterDiv.onAdd=function(){
   this.update(0,0); 
   return this._div; 
 };
-// ----------------- Лічильники + Дата і час -----------------
-function getDateTimeString() {
-  const now = new Date();
-  const options = { day: '2-digit', month: '2-digit', year: '2-digit' };
-  const date = now.toLocaleDateString('uk-UA', options);
-  const time = now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  return `${date} ${time}`;
-}
-
-counterDiv.update = function(views, count) { 
-  const dateTime = getDateTimeString();
-  this._div.innerHTML = `👁️ ${views} | 📌 ${count}<br><span style="font-size:12px; color:#555;">🕒 ${dateTime}</span>`;
+counterDiv.update=function(views, count){ 
+  this._div.innerHTML=`👁️ ${views} | 📌 ${count}`; 
 };
-
-// Автоматичне оновлення часу
-setInterval(() => {
-  const div = document.querySelector('.map-counter');
-  if (div) {
-    const current = div.innerHTML.split('<br>')[0]; // залишаємо верхню частину (лічильники)
-    const now = getDateTimeString();
-    div.innerHTML = `${current}<br><span style="font-size:12px; color:#555;">🕒 ${now}</span>`;
-  }
-}, 1000);
-
 counterDiv.addTo(map);
 
 let markerCount = 0;
@@ -544,3 +532,5 @@ document.getElementById('goToCoord').onclick = () => {
 
 
 
+
+const satelliteLayer
