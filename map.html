@@ -171,7 +171,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
-#reviewAuthor { display:block; }
+#reviewAuthor { display:none; }
 
 </style>
 </head>
@@ -249,23 +249,20 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
       <p style="text-align:center; color:#777;">(немає відгуків)</p>
     </div>
 
-    <!-- Нове поле для імені -->
-    <input type="text" id="reviewAuthor" placeholder="Ваше ім'я" style="width:100%; padding:6px; margin-bottom:6px; border-radius:6px; border:1px solid #ccc;">
+<textarea id="newReview" placeholder="Ваш відгук..." 
+  style="width:100%; height:60px; border-radius:6px; border:1px solid #ccc; padding:6px;"></textarea>
 
-    <textarea id="newReview" placeholder="Ваш відгук..." 
-      style="width:100%; height:60px; border-radius:6px; border:1px solid #ccc; padding:6px; margin-bottom:6px;"></textarea>
+<button id="addReviewBtn" 
+  style="margin-top:8px; padding:6px 12px; background:#007bff; color:white; border:none; border-radius:6px; cursor:pointer;">
+  Додати
+</button>
+<button id="closeReviewsBtn" 
+  style="margin-top:8px; padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer;">
+  Закрити
+</button>
 
-    <button id="addReviewBtn" 
-      style="margin-top:4px; padding:6px 12px; background:#007bff; color:white; border:none; border-radius:6px; cursor:pointer;">
-      Додати
-    </button>
-    <button id="closeReviewsBtn" 
-      style="margin-top:4px; padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer;">
-      Закрити
-    </button>
   </div>
 </div>
-
 <script>
 // Firebase
 const firebaseConfig = {
@@ -280,34 +277,54 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Карта
-const map = L.map('map').setView([49,31],6);
-const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-// Замінюємо старий Google Satellite шар на Esri + підписи
-const satelliteLayer = L.layerGroup([
-  L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 20, attribution: 'Imagery © Esri, NASA, USGS' }
-  ),
-  L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 20, attribution: 'Labels © Esri' }
-  )
-]);
+// === Карта з Google-подібними шарами ===
 
-let isSatellite = false;
-document.getElementById('layerBtn').onclick = () => { 
-  if(isSatellite){ 
-    map.removeLayer(satelliteLayer); 
-    map.addLayer(osmLayer); 
-    document.getElementById('layerBtn').textContent = "🗺️"; 
-  } else { 
-    map.removeLayer(osmLayer); 
-    map.addLayer(satelliteLayer); 
-    document.getElementById('layerBtn').textContent = "🌍"; 
+// Центр карти
+const map = L.map('map').setView([49.0, 31.0], 6);
+
+// 🔹 Google Hybrid (супутник + назви)
+const googleHybrid = L.tileLayer(
+  'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', 
+  {
+    maxZoom: 20,
+    attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
   }
-  isSatellite = !isSatellite;
+);
+
+// 🔹 Google Roadmap (світла)
+const googleMap = L.tileLayer(
+  'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', 
+  {
+    maxZoom: 20,
+    attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+  }
+).addTo(map); // ✅ додаємо світлу карту одразу
+
+// 🔹 OpenStreetMap (резервний варіант)
+const osmLayer = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
+  {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }
+);
+
+// 🔘 Перемикач шарів
+let currentLayer = googleMap; // ✅ поточний шар — світла карта
+document.getElementById('layerBtn').onclick = () => {
+  map.removeLayer(currentLayer);
+
+  if (currentLayer === googleMap) {
+    map.addLayer(googleHybrid);
+    document.getElementById('layerBtn').textContent = "🛰️";
+    currentLayer = googleHybrid;
+  } else {
+    map.addLayer(googleMap);
+    document.getElementById('layerBtn').textContent = "🗺️";
+    currentLayer = googleMap;
+  }
 };
+
 
 
 // ----------------- Геолокація з анімацією -----------------
@@ -592,15 +609,15 @@ if (currentUserId) {
 
 // ===============================================================
 
-// ================= ВІДГУКИ =================
+// ----- ВІДГУКИ -----
 const reviewsBox = document.getElementById('reviewsBox');
 const reviewsList = document.getElementById('reviewsList');
 const newReview = document.getElementById('newReview');
+const reviewAuthor = document.getElementById('reviewAuthor');
 const addReviewBtn = document.getElementById('addReviewBtn');
 const closeReviewsBtn = document.getElementById('closeReviewsBtn');
 let currentReviewId = null;
 
-// Відкриття вікна відгуків
 function openReviewsWindow(markerId, title) {
   currentReviewId = markerId;
   document.getElementById('reviewsTitle').innerText = `Відгуки — ${title}`;
@@ -608,17 +625,15 @@ function openReviewsWindow(markerId, title) {
   loadReviews(markerId);
 }
 
-// Завантаження відгуків
 function loadReviews(markerId) {
   const ref = db.ref(`markers/${markerId}/reviews`);
-  ref.off(); // знімаємо старі слухачі
+  ref.off();
   ref.on('value', snap => {
     reviewsList.innerHTML = '';
     if (!snap.exists()) {
       reviewsList.innerHTML = '<p style="text-align:center; color:#777;">(немає відгуків)</p>';
       return;
     }
-
     snap.forEach(child => {
       const r = child.val();
       const reviewId = child.key;
@@ -626,17 +641,18 @@ function loadReviews(markerId) {
       const div = document.createElement('div');
       div.style.borderBottom = '1px solid #ddd';
       div.style.padding = '6px 0';
-      div.style.position = 'relative';
-      div.innerHTML = `<b>👤 ${r.author || 'Анонім'}</b> <span style="color:#777;">(${r.date})</span><br>${r.text}`;
+      div.innerHTML = `
+        <b>👤 ${r.author || 'Анонім'}</b> 
+        <span style="color:#777;">(${r.date})</span><br>
+        ${r.text}
+      `;
 
-      // Кнопка видалення для адміна
+      // 🔹 Кнопка видалення для адміна
       if (isAdmin) {
         const delBtn = document.createElement('button');
         delBtn.textContent = '❌';
         delBtn.style.cssText = `
-          position: absolute;
-          top: 0;
-          right: 0;
+          float: right;
           background: none;
           border: none;
           color: red;
@@ -648,7 +664,7 @@ function loadReviews(markerId) {
             db.ref(`markers/${markerId}/reviews/${reviewId}`).remove();
           }
         };
-        div.appendChild(delBtn);
+        div.prepend(delBtn);
       }
 
       reviewsList.appendChild(div);
@@ -656,36 +672,24 @@ function loadReviews(markerId) {
   });
 }
 
-// Додавання нового відгуку
+
 addReviewBtn.onclick = () => {
   const text = newReview.value.trim();
-  const authorInput = document.getElementById('reviewAuthor').value.trim();
-  const author = authorInput || "Анонім";
+  const author = currentUserName || "Анонім";
   if (!text) return alert("Введіть текст відгуку!");
   const date = new Date().toLocaleString('uk-UA');
-  if (!currentReviewId) return;
-
   db.ref(`markers/${currentReviewId}/reviews`).push({ author, text, date });
   newReview.value = '';
-  document.getElementById('reviewAuthor').value = ''; // очищаємо поле після відправки
-
-  // оновлюємо список відгуків після додавання
-  loadReviews(currentReviewId);
+  reviewAuthor.value = '';
 };
 
-
-// Закриття вікна
 closeReviewsBtn.onclick = () => {
   reviewsBox.style.display = 'none';
   currentReviewId = null;
 };
 
-// ---------------- Адмін входить під час відкритих відгуків ----------------
-function refreshReviewsIfOpen() {
-  if (currentReviewId) loadReviews(currentReviewId);
-}
-
-
 </script>
 </body>
 </html>
+
+
