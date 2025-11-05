@@ -171,7 +171,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
-#reviewAuthor { display:none; }
+#reviewAuthor { display:block; }
 
 </style>
 </head>
@@ -249,13 +249,9 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
       <p style="text-align:center; color:#777;">(немає відгуків)</p>
     </div>
 
-<textarea id="newReview" placeholder="Ваш відгук..." 
-  style="width:100%; height:60px; border-radius:6px; border:1px solid #ccc; padding:6px;"></textarea>
-
-<button id="addReviewBtn" 
-  style="margin-top:8px; padding:6px 12px; background:#007bff; color:white; border:none; border-radius:6px; cursor:pointer;">
-  Додати
-</button>
+<input id="reviewAuthor" type="text" placeholder="Ваше ім'я" style="margin-bottom: 6px; padding: 6px; width: 100%; box-sizing: border-box;">
+<textarea id="newReview" placeholder="Ваш відгук" style="width: 100%; height: 70px; box-sizing: border-box;"></textarea>
+<button id="addReviewBtn">Додати</button>
 <button id="closeReviewsBtn" 
   style="margin-top:8px; padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer;">
   Закрити
@@ -594,20 +590,6 @@ document.getElementById('goToCoord').onclick = () => {
   else tempAddMarker = L.marker([lat,lng], {draggable:true}).addTo(map).bindPopup("Точка для додавання").openPopup();
   pendingLatLng = {lat, lng};
 };
-// =================== АВТОМАТИЧНЕ ІМ’Я КОРИСТУВАЧА ===================
-let currentUserId = null;
-let currentUserName = "Анонім";
-
-// 🔹 Тут встав свій uid користувача (або логіку авторизації)
-currentUserId = "11qW7liSEMZxKOiBXFsN9W8lgA12"; // ← твій користувач
-
-if (currentUserId) {
-  db.ref("users/" + currentUserId + "/name").on("value", snap => {
-    if (snap.exists()) currentUserName = snap.val();
-  });
-}
-
-// ===============================================================
 
 // ----- ВІДГУКИ -----
 const reviewsBox = document.getElementById('reviewsBox');
@@ -675,14 +657,20 @@ function loadReviews(markerId) {
 
 addReviewBtn.onclick = () => {
   const text = newReview.value.trim();
-  const author = currentUserName || "Анонім";
-  if (!text) return alert("Введіть текст відгуку!");
-  const date = new Date().toLocaleString('uk-UA');
-  db.ref(`markers/${currentReviewId}/reviews`).push({ author, text, date });
-  newReview.value = '';
-  reviewAuthor.value = '';
-};
+  const author = reviewAuthor.value.trim() || "Анонім";
 
+  if (!text) return alert("Введіть текст відгуку!");
+
+  const date = new Date().toLocaleString('uk-UA');
+
+  db.ref(`markers/${currentReviewId}/reviews`).push({
+    author,
+    text,
+    date
+  });
+
+  newReview.value = "";
+};
 closeReviewsBtn.onclick = () => {
   reviewsBox.style.display = 'none';
   currentReviewId = null;
@@ -691,7 +679,4 @@ closeReviewsBtn.onclick = () => {
 </script>
 </body>
 </html>
-
-
-
 
