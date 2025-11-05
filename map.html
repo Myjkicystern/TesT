@@ -251,6 +251,8 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 
 <input id="reviewAuthor" type="text" placeholder="Ваше ім'я" style="margin-bottom: 6px; padding: 6px; width: 100%; box-sizing: border-box;">
 <textarea id="newReview" placeholder="Ваш відгук" style="width: 100%; height: 70px; box-sizing: border-box;"></textarea>
+
+<input type="file" id="reviewFile" accept="image/*,video/*" style="margin: 6px 0;">
 <button id="addReviewBtn">Додати</button>
 <button id="closeReviewsBtn" 
   style="margin-top:8px; padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer;">
@@ -624,10 +626,29 @@ function loadReviews(markerId) {
       div.style.borderBottom = '1px solid #ddd';
       div.style.padding = '6px 0';
       div.innerHTML = `
-        <b>👤 ${r.author || 'Анонім'}</b> 
-        <span style="color:#777;">(${r.date})</span><br>
-        ${r.text}
-      `;
+  <b>👤 ${r.author || 'Анонім'}</b> 
+  <span style="color:#777;">(${r.date})</span><br>
+  ${r.text}
+`;
+
+if (r.file) {
+  if (r.file.startsWith("data:video")) {
+    const vid = document.createElement('video');
+    vid.src = r.file;
+    vid.controls = true;
+    vid.style.width = "100%";
+    vid.style.marginTop = "5px";
+    div.appendChild(vid);
+  } else {
+    const img = document.createElement('img');
+    img.src = r.file;
+    img.style.width = "100%";
+    img.style.marginTop = "5px";
+    img.style.borderRadius = "6px";
+    div.appendChild(img);
+  }
+}
+
 
       // 🔹 Кнопка видалення для адміна
       if (isAdmin) {
@@ -658,19 +679,28 @@ function loadReviews(markerId) {
 addReviewBtn.onclick = () => {
   const text = newReview.value.trim();
   const author = reviewAuthor.value.trim() || "Анонім";
+  const file = document.getElementById('reviewFile').files[0];
 
   if (!text) return alert("Введіть текст відгуку!");
 
   const date = new Date().toLocaleString('uk-UA');
+  const reviewData = { author, text, date };
 
-  db.ref(`markers/${currentReviewId}/reviews`).push({
-    author,
-    text,
-    date
-  });
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      reviewData.file = e.target.result;
+      db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
+  }
 
   newReview.value = "";
+  document.getElementById('reviewFile').value = "";
 };
+
 closeReviewsBtn.onclick = () => {
   reviewsBox.style.display = 'none';
   currentReviewId = null;
@@ -679,5 +709,4 @@ closeReviewsBtn.onclick = () => {
 </script>
 </body>
 </html>
-
 
