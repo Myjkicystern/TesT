@@ -172,6 +172,32 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 #reviewAuthor { display:block; }
+#imgFullScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#imgFullScreen img {
+  max-width: 95%;
+  max-height: 95%;
+  border-radius: 8px;
+  cursor: zoom-out;
+}
+    
+
+
+.review-media {
+  border-radius: 6px;
+  transition: transform 0.2s;
+}
+.review-media:hover {
+  transform: scale(1.02);
+}
 
 </style>
 </head>
@@ -261,6 +287,10 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 
   </div>
 </div>
+<div id="imgFullScreen">
+  <img id="fsImg" src="">
+</div>
+
 <script>
 // Firebase
 const firebaseConfig = {
@@ -477,6 +507,20 @@ function refreshAdminClicks(){
   } 
 }
 
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("review-media")) {
+    const full = document.getElementById("imgFullScreen");
+    const fsImg = document.getElementById("fsImg");
+    fsImg.src = e.target.src;
+    full.style.display = "flex";
+  }
+});
+
+document.getElementById("imgFullScreen").onclick = () => {
+  document.getElementById("imgFullScreen").style.display = "none";
+};
+
+
 // ----------------- Firebase sync -----------------
 markersRef.on('child_added',snap=>{ if(!markers[snap.key]) addMarkerToMap(snap.key,snap.val()); });
 markersRef.on('child_changed',snap=>{ if(markers[snap.key]){ map.removeLayer(markers[snap.key]); addMarkerToMap(snap.key,snap.val()); } });
@@ -625,29 +669,60 @@ function loadReviews(markerId) {
       const div = document.createElement('div');
       div.style.borderBottom = '1px solid #ddd';
       div.style.padding = '6px 0';
+
       div.innerHTML = `
-  <b>👤 ${r.author || 'Анонім'}</b> 
-  <span style="color:#777;">(${r.date})</span><br>
-  ${r.text}
-`;
+        <b>👤 ${r.author || 'Анонім'}</b> 
+        <span style="color:#777;">(${r.date})</span><br>
+        ${r.text}
+      `;
+
+      // Фото / Відео
+      if (r.file) {
+        if (r.file.startsWith("data:video")) {
+          const video = document.createElement("video");
+          video.src = r.file;
+          video.controls = true;
+          video.style.width = "100%";
+          video.style.borderRadius = "6px";
+          video.style.marginTop = "6px";
+          div.appendChild(video);
+        } else if (r.file.startsWith("data:image")) {
+          const img = document.createElement("img");
+          img.src = r.file;
+          img.className = "review-media";
+          img.style.maxWidth = "100%";
+          img.style.marginTop = "6px";
+          div.appendChild(img);
+        }
+      }
+
+      reviewsList.appendChild(div);
+
 
 if (r.file) {
+  // Якщо ВІДЕО
   if (r.file.startsWith("data:video")) {
-    const vid = document.createElement('video');
-    vid.src = r.file;
-    vid.controls = true;
-    vid.style.width = "100%";
-    vid.style.marginTop = "5px";
-    div.appendChild(vid);
-  } else {
-    const img = document.createElement('img');
+    const video = document.createElement("video");
+    video.src = r.file;
+    video.controls = true;
+    video.style.width = "100%";
+    video.style.borderRadius = "6px";
+    video.style.marginTop = "6px";
+    div.appendChild(video);
+  }
+
+  // Якщо ФОТО
+  else if (r.file.startsWith("data:image")) {
+    const img = document.createElement("img");
     img.src = r.file;
-    img.style.width = "100%";
-    img.style.marginTop = "5px";
-    img.style.borderRadius = "6px";
+    img.className = "review-media"; // дозволяє відкривати на весь екран
+    img.style.maxWidth = "100%";
+    img.style.marginTop = "6px";
     div.appendChild(img);
   }
 }
+
+
 
 
       // 🔹 Кнопка видалення для адміна
@@ -705,8 +780,29 @@ closeReviewsBtn.onclick = () => {
   reviewsBox.style.display = 'none';
   currentReviewId = null;
 };
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("review-image")) {
+    const full = document.getElementById("imgFullScreen");
+    const fsImg = document.getElementById("fsImg");
+    fsImg.src = e.target.src;
+    full.style.display = "flex";
+
+    try { full.requestFullscreen(); } catch (e) {}
+  }
+});
+
+document.getElementById("imgFullScreen").onclick = () => {
+  const full = document.getElementById("imgFullScreen");
+  full.style.display = "none";
+  try { document.exitFullscreen(); } catch (e) {}
+};
 
 </script>
+<div id="imgFullScreen" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);justify-content:center;align-items:center;z-index:9999;">
+  <img id="fsImg" src="" style="max-width:95%;max-height:95%;border-radius:8px;cursor:zoom-out;">
+</div>
+
 </body>
 </html>
 
+reviewsList.appendChild(div);
