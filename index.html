@@ -37,7 +37,14 @@ body {
   background: #f0f2f5;
   text-align: center;
 }
-body { margin-top: 40px; font-family: Roboto, sans-serif; text-align: center; padding: 10px; background: #f0f2f5; overflow-x: hidden; }
+body {
+  margin-top: 40px;
+  font-family: Roboto, sans-serif;
+  background: #d4d3d3; /* темний графіт */
+  color: #e8e8e8; /* світлий текст */
+  text-align: center;
+}
+
 /* 🔹 Анімований градієнт + пульсуючий ефект */
 h1 {
   font-size: 26px;
@@ -50,7 +57,6 @@ h1 {
   -webkit-text-fill-color: transparent;
   margin: 5px 0 10px 0;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  animation: gradientShift 6s ease infinite, fadeInDown 1s ease-out, pulseGlow 2s ease-in-out infinite;
 }
 
 /* Ефект плавної появи */
@@ -167,6 +173,42 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 /* Spinner */
 #loadingSpinner {display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); border:6px solid #f3f3f3; border-top:6px solid #007bff; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; z-index:6000;}
 @keyframes spin {0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
+
+.title-wrap {
+  position: relative;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.santa-hat {
+  position: absolute;
+  width: 60px; /* Розмір шапки */
+  top: -11px;  /* Висота підйому над текстом */
+  left: -24px; /* Зміщення вліво/вправо */
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+
+.snowflake {
+  position: fixed;
+  top: -10px;
+  color: white;
+  font-size: 12px;
+  pointer-events: none;
+  animation: fall linear infinite;
+  opacity: 0.9;
+  z-index: 9000;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -185,7 +227,11 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 
 <div id="loadingSpinner"></div>
 
-<h1>Мийки цистерн</h1>
+<div class="title-wrap">
+  <h1>Мийки цистерн</h1>
+  <img src="Santa.png" alt="Santa Hat" class="santa-hat">
+</div>
+
 <p> Нові мийки можна писати в коментарях і вони будуть додані на карту.</p>
 
 <!-- Вхід -->
@@ -238,6 +284,7 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
     <button onclick="closeModal()">Закрити</button>
   </div>
 </div>
+
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -571,6 +618,27 @@ function updateUserCount() {
 }
 updateUserCount();
 
+function createSnowflake() {
+  const snowflake = document.createElement('div');
+  snowflake.classList.add('snowflake');
+  snowflake.textContent = '❄';
+
+  // Випадкові параметри
+  snowflake.style.left = Math.random() * 100 + 'vw';
+  snowflake.style.animationDuration = 4 + Math.random() * 6 + 's';
+  snowflake.style.fontSize = 10 + Math.random() * 12 + 'px';
+
+  document.body.appendChild(snowflake);
+
+  // Видалення після анімації
+  setTimeout(() => {
+    snowflake.remove();
+  }, 10000);
+}
+
+// Частота створення сніжинок
+setInterval(createSnowflake, 200);
+
 
 
 </script>
@@ -579,7 +647,6 @@ updateUserCount();
 
 </body>
 </html>
-
 
 
 
