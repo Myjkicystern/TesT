@@ -266,14 +266,44 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 
 <!-- Вікно відгуків -->
 <div id="reviewsBox" style="
-  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.6); z-index:6000; align-items:center; justify-content:center;">
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+  z-index:6000; align-items:center; justify-content:center;">
   <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; text-align:center;">
     <h3 id="reviewsTitle">Відгуки</h3>
 
     <div id="reviewsList" style="max-height:200px; overflow-y:auto; text-align:left; border:1px solid #ccc; border-radius:6px; padding:8px; margin-bottom:10px;">
       <p style="text-align:center; color:#777;">(немає відгуків)</p>
     </div>
+
+    <input id="reviewAuthor" type="text" placeholder="Ваше ім'я" style="margin-bottom: 6px; padding: 6px; width: 100%; box-sizing: border-box;">
+    <textarea id="newReview" placeholder="Ваш відгук" style="width: 100%; height: 70px; box-sizing: border-box;"></textarea>
+    <input type="file" id="reviewFile" accept="image/*,video/*" style="margin: 6px 0;">
+    <button id="addReviewBtn">Додати</button>
+
+    <button id="closeReviewsBtn" style="
+      margin-top:8px; padding:6px 12px; background:#dc3545; color:white;
+      border:none; border-radius:6px; cursor:pointer;">
+      Закрити
+    </button>
+  </div>
+</div>
+
+<!-- Повноекранне зображення/відео -->
+<div id="mediaFullScreen" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9);
+  justify-content:center; align-items:center; z-index:7000;">
+  <img id="fsImg" src="" style="max-width:95%; max-height:95%; border-radius:8px; cursor:zoom-out;">
+  <video id="fsVideo" controls style="max-width:95%; max-height:95%; border-radius:8px; display:none;"></video>
+</div>
+
+<!-- Повноекранне зображення/відео -->
+<div id="mediaFullScreen" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9);
+  justify-content:center; align-items:center; z-index:7000;">
+  <img id="fsImg" src="" style="max-width:95%; max-height:95%; border-radius:8px; cursor:zoom-out;">
+  <video id="fsVideo" controls style="max-width:95%; max-height:95%; border-radius:8px; display:none;"></video>
+</div>
+
 
 <input id="reviewAuthor" type="text" placeholder="Ваше ім'я" style="margin-bottom: 6px; padding: 6px; width: 100%; box-sizing: border-box;">
 <textarea id="newReview" placeholder="Ваш відгук" style="width: 100%; height: 70px; box-sizing: border-box;"></textarea>
@@ -644,8 +674,13 @@ const newReview = document.getElementById('newReview');
 const reviewAuthor = document.getElementById('reviewAuthor');
 const addReviewBtn = document.getElementById('addReviewBtn');
 const closeReviewsBtn = document.getElementById('closeReviewsBtn');
+const mediaFullScreen = document.getElementById('mediaFullScreen');
+const fsImg = document.getElementById('fsImg');
+const fsVideo = document.getElementById('fsVideo');
+
 let currentReviewId = null;
 
+// Відкриття вікна відгуків
 function openReviewsWindow(markerId, title) {
   currentReviewId = markerId;
   document.getElementById('reviewsTitle').innerText = `Відгуки — ${title}`;
@@ -653,6 +688,7 @@ function openReviewsWindow(markerId, title) {
   loadReviews(markerId);
 }
 
+// Завантаження відгуків з Firebase
 function loadReviews(markerId) {
   const ref = db.ref(`markers/${markerId}/reviews`);
   ref.off();
@@ -662,6 +698,7 @@ function loadReviews(markerId) {
       reviewsList.innerHTML = '<p style="text-align:center; color:#777;">(немає відгуків)</p>';
       return;
     }
+
     snap.forEach(child => {
       const r = child.val();
       const reviewId = child.key;
@@ -670,11 +707,8 @@ function loadReviews(markerId) {
       div.style.borderBottom = '1px solid #ddd';
       div.style.padding = '6px 0';
 
-      div.innerHTML = `
-        <b>👤 ${r.author || 'Анонім'}</b> 
-        <span style="color:#777;">(${r.date})</span><br>
-        ${r.text}
-      `;
+      div.innerHTML = `<b>👤 ${r.author || 'Анонім'}</b> 
+                       <span style="color:#777;">(${r.date})</span><br>${r.text}`;
 
       // Фото / Відео
       if (r.file) {
@@ -685,6 +719,7 @@ function loadReviews(markerId) {
           video.style.width = "100%";
           video.style.borderRadius = "6px";
           video.style.marginTop = "6px";
+          video.className = "review-media";
           div.appendChild(video);
         } else if (r.file.startsWith("data:image")) {
           const img = document.createElement("img");
@@ -698,18 +733,11 @@ function loadReviews(markerId) {
         }
       }
 
-      // 🔹 Кнопка видалення для адміна
+      // Кнопка видалення для адміна
       if (isAdmin) {
         const delBtn = document.createElement('button');
         delBtn.textContent = '❌';
-        delBtn.style.cssText = `
-          float: right;
-          background: none;
-          border: none;
-          color: red;
-          font-size: 16px;
-          cursor: pointer;
-        `;
+        delBtn.style.cssText = `float:right; background:none; border:none; color:red; font-size:16px; cursor:pointer;`;
         delBtn.onclick = () => {
           if (confirm("Видалити цей відгук?")) {
             db.ref(`markers/${markerId}/reviews/${reviewId}`).remove();
@@ -723,7 +751,7 @@ function loadReviews(markerId) {
   });
 }
 
-
+// Додавання відгуку
 addReviewBtn.onclick = () => {
   const text = newReview.value.trim();
   const author = reviewAuthor.value.trim() || "Анонім";
@@ -731,14 +759,13 @@ addReviewBtn.onclick = () => {
   const file = fileInput.files[0];
 
   if (!text) return alert("Введіть текст відгуку!");
-
   const date = new Date().toLocaleString('uk-UA');
   const reviewData = { author, text, date };
 
   if (file) {
     const reader = new FileReader();
     reader.onload = e => {
-      reviewData.file = e.target.result; // зберігаємо фото/відео як base64
+      reviewData.file = e.target.result;
       db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
     };
     reader.readAsDataURL(file);
@@ -746,54 +773,38 @@ addReviewBtn.onclick = () => {
     db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
   }
 
-  // очищаємо форми
   newReview.value = "";
   reviewAuthor.value = "";
   fileInput.value = "";
 };
 
-// Фото / Відео
-if (r.file) {
-  if (r.file.startsWith("data:video")) {
-    const video = document.createElement("video");
-    video.src = r.file;
-    video.controls = true;
-    video.style.width = "100%";
-    video.style.borderRadius = "6px";
-    video.style.marginTop = "6px";
-    div.appendChild(video);
-  } else if (r.file.startsWith("data:image")) {
-    const img = document.createElement("img");
-    img.src = r.file;
-    img.className = "review-media";
-    img.style.maxWidth = "100%";
-    img.style.borderRadius = "6px";
-    img.style.marginTop = "6px";
-    img.style.cursor = "zoom-in";
-    div.appendChild(img);
-  }
-}
-
-
+// Закриття вікна відгуків
 closeReviewsBtn.onclick = () => {
   reviewsBox.style.display = 'none';
   currentReviewId = null;
 };
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("review-image")) {
-    const full = document.getElementById("imgFullScreen");
-    const fsImg = document.getElementById("fsImg");
-    fsImg.src = e.target.src;
-    full.style.display = "flex";
 
-    try { full.requestFullscreen(); } catch (e) {}
+// Відкриття фото/відео на весь екран
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("review-media")) {
+    if (e.target.tagName === 'IMG') {
+      fsImg.src = e.target.src;
+      fsImg.style.display = 'block';
+      fsVideo.style.display = 'none';
+    } else if (e.target.tagName === 'VIDEO') {
+      fsVideo.src = e.target.src;
+      fsVideo.style.display = 'block';
+      fsImg.style.display = 'none';
+    }
+    mediaFullScreen.style.display = 'flex';
   }
 });
 
-document.getElementById("imgFullScreen").onclick = () => {
-  const full = document.getElementById("imgFullScreen");
-  full.style.display = "none";
-  try { document.exitFullscreen(); } catch (e) {}
+// Закриття повноекранного медіа
+mediaFullScreen.onclick = () => {
+  mediaFullScreen.style.display = 'none';
+  fsImg.src = '';
+  fsVideo.src = '';
 };
 
 </script>
