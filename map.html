@@ -691,39 +691,12 @@ function loadReviews(markerId) {
           img.src = r.file;
           img.className = "review-media";
           img.style.maxWidth = "100%";
+          img.style.borderRadius = "6px";
           img.style.marginTop = "6px";
+          img.style.cursor = "zoom-in";
           div.appendChild(img);
         }
       }
-
-      reviewsList.appendChild(div);
-
-
-if (r.file) {
-  // Якщо ВІДЕО
-  if (r.file.startsWith("data:video")) {
-    const video = document.createElement("video");
-    video.src = r.file;
-    video.controls = true;
-    video.style.width = "100%";
-    video.style.borderRadius = "6px";
-    video.style.marginTop = "6px";
-    div.appendChild(video);
-  }
-
-  // Якщо ФОТО
-  else if (r.file.startsWith("data:image")) {
-    const img = document.createElement("img");
-    img.src = r.file;
-    img.className = "review-media"; // дозволяє відкривати на весь екран
-    img.style.maxWidth = "100%";
-    img.style.marginTop = "6px";
-    div.appendChild(img);
-  }
-}
-
-
-
 
       // 🔹 Кнопка видалення для адміна
       if (isAdmin) {
@@ -754,7 +727,8 @@ if (r.file) {
 addReviewBtn.onclick = () => {
   const text = newReview.value.trim();
   const author = reviewAuthor.value.trim() || "Анонім";
-  const file = document.getElementById('reviewFile').files[0];
+  const fileInput = document.getElementById('reviewFile');
+  const file = fileInput.files[0];
 
   if (!text) return alert("Введіть текст відгуку!");
 
@@ -764,7 +738,7 @@ addReviewBtn.onclick = () => {
   if (file) {
     const reader = new FileReader();
     reader.onload = e => {
-      reviewData.file = e.target.result;
+      reviewData.file = e.target.result; // зберігаємо фото/відео як base64
       db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
     };
     reader.readAsDataURL(file);
@@ -772,9 +746,34 @@ addReviewBtn.onclick = () => {
     db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
   }
 
+  // очищаємо форми
   newReview.value = "";
-  document.getElementById('reviewFile').value = "";
+  reviewAuthor.value = "";
+  fileInput.value = "";
 };
+
+// Фото / Відео
+if (r.file) {
+  if (r.file.startsWith("data:video")) {
+    const video = document.createElement("video");
+    video.src = r.file;
+    video.controls = true;
+    video.style.width = "100%";
+    video.style.borderRadius = "6px";
+    video.style.marginTop = "6px";
+    div.appendChild(video);
+  } else if (r.file.startsWith("data:image")) {
+    const img = document.createElement("img");
+    img.src = r.file;
+    img.className = "review-media";
+    img.style.maxWidth = "100%";
+    img.style.borderRadius = "6px";
+    img.style.marginTop = "6px";
+    img.style.cursor = "zoom-in";
+    div.appendChild(img);
+  }
+}
+
 
 closeReviewsBtn.onclick = () => {
   reviewsBox.style.display = 'none';
@@ -804,5 +803,3 @@ document.getElementById("imgFullScreen").onclick = () => {
 
 </body>
 </html>
-
-reviewsList.appendChild(div);
