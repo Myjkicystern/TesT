@@ -659,11 +659,13 @@ const newReview = document.getElementById('newReview');
 const reviewAuthor = document.getElementById('reviewAuthor');
 const addReviewBtn = document.getElementById('addReviewBtn');
 const closeReviewsBtn = document.getElementById('closeReviewsBtn');
-const mediaFullScreen = document.getElementById('mediaFullScreen');
-const fsImg = document.getElementById('fsImg');
-const fsVideo = document.getElementById('fsVideo');
 
+const fsImg = document.getElementById('fsImg');
+const mediaFullScreen = document.getElementById('imgFullScreen');
 let currentReviewId = null;
+
+// Тут потрібно визначити користувача. Наприклад, просто по імені з input:
+let currentUserId = null; // Можна замінити на авторизацію
 
 // Відкриття вікна відгуків
 function openReviewsWindow(markerId, title) {
@@ -682,96 +684,6 @@ function loadReviews(markerId) {
     if (!snap.exists()) {
       reviewsList.innerHTML = '<p style="text-align:center; color:#777;">(немає відгуків)</p>';
       return;
-      // Завантаження відгуків
-function loadReviews(markerId) {
-  const ref = db.ref(`reviews/${markerId}`);
-  reviewsList.innerHTML = '<p style="text-align:center; color:#777;">Завантаження...</p>';
-
-  ref.on('value', snap => {
-    const data = snap.val();
-    if (!data) {
-      reviewsList.innerHTML = '<p style="text-align:center; color:#777;">(немає відгуків)</p>';
-      return;
-    }
-
-    reviewsList.innerHTML = '';
-    Object.values(data).forEach(r => {
-      const div = document.createElement('div');
-      div.style.marginBottom = '10px';
-      div.style.borderBottom = '1px solid #eee';
-      div.style.paddingBottom = '6px';
-      div.innerHTML = `<b>${r.author || 'Анонім'}</b><br>${r.text || ''}`;
-
-      if (r.media) {
-        const isVideo = r.media.startsWith('data:video');
-        const mediaEl = document.createElement(isVideo ? 'video' : 'img');
-        mediaEl.src = r.media;
-        mediaEl.className = 'review-media';
-        mediaEl.style.width = '100%';
-        mediaEl.style.marginTop = '5px';
-        if (isVideo) mediaEl.controls = true;
-        div.appendChild(mediaEl);
-      }
-      reviewsList.appendChild(div);
-    });
-  });
-}
-
-// Додавання нового відгуку
-addReviewBtn.onclick = () => {
-  const text = newReview.value.trim();
-  const author = reviewAuthor.value.trim() || 'Анонім';
-  const file = document.getElementById('reviewFile').files[0];
-
-  if (!text && !file) {
-    alert("Напишіть відгук або додайте медіа!");
-    return;
-  }
-
-  const ref = db.ref(`reviews/${currentReviewId}`).push();
-
-  const saveReview = (media = null) => {
-    ref.set({ author, text, media, time: Date.now() });
-    newReview.value = '';
-    reviewAuthor.value = '';
-    document.getElementById('reviewFile').value = '';
-  };
-
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = e => saveReview(e.target.result);
-    reader.readAsDataURL(file);
-  } else saveReview();
-};
-
-// Закриття вікна відгуків
-closeReviewsBtn.onclick = () => {
-  reviewsBox.style.display = 'none';
-  currentReviewId = null;
-};
-
-// Повноекранне відкриття зображення/відео
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('review-media')) {
-    if (e.target.tagName === 'VIDEO') {
-      fsVideo.src = e.target.src;
-      fsVideo.style.display = 'block';
-      fsImg.style.display = 'none';
-    } else {
-      fsImg.src = e.target.src;
-      fsImg.style.display = 'block';
-      fsVideo.style.display = 'none';
-    }
-    mediaFullScreen.style.display = 'flex';
-  }
-});
-mediaFullScreen.onclick = () => {
-  mediaFullScreen.style.display = 'none';
-  fsImg.src = '';
-  fsVideo.src = '';
-  fsVideo.pause();
-};
-
     }
 
     snap.forEach(child => {
@@ -783,9 +695,10 @@ mediaFullScreen.onclick = () => {
       div.style.padding = '6px 0';
 
       div.innerHTML = `<b>👤 ${r.author || 'Анонім'}</b> 
-                       <span style="color:#777;">(${r.date})</span><br>${r.text}`;
+                       <span style="color:#777;">(${r.date || ''})</span><br>
+                       <span class="review-text">${r.text}</span>`;
 
-      // Фото / Відео
+      // Фото/Відео
       if (r.file) {
         if (r.file.startsWith("data:video")) {
           const video = document.createElement("video");
@@ -808,17 +721,26 @@ mediaFullScreen.onclick = () => {
         }
       }
 
-      // Кнопка видалення для адміна
+      // Кнопки редагування/видалення
+      const canEdit = isAdmin || r.authorId === currentUserId;
+      if (canEdit) {
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '✏️';
+        editBtn.style.cssText = 'margin-left:6px; cursor:pointer;';
+        editBtn.onclick = () => editReview(markerId, reviewId, div, r.text);
+        div.appendChild(editBtn);
+      }
+
       if (isAdmin) {
         const delBtn = document.createElement('button');
         delBtn.textContent = '❌';
-        delBtn.style.cssText = `float:right; background:none; border:none; color:red; font-size:16px; cursor:pointer;`;
+        delBtn.style.cssText = 'margin-left:6px; cursor:pointer; color:red;';
         delBtn.onclick = () => {
           if (confirm("Видалити цей відгук?")) {
             db.ref(`markers/${markerId}/reviews/${reviewId}`).remove();
           }
         };
-        div.prepend(delBtn);
+        div.appendChild(delBtn);
       }
 
       reviewsList.appendChild(div);
@@ -826,16 +748,41 @@ mediaFullScreen.onclick = () => {
   });
 }
 
-// Додавання відгуку
+// Редагування відгуку
+function editReview(markerId, reviewId, div, oldText) {
+  const span = div.querySelector('.review-text');
+  span.innerHTML = `<textarea style="width:100%">${oldText}</textarea>
+                    <button style="margin-top:4px;">Зберегти</button>
+                    <button style="margin-top:4px;">Скасувати</button>`;
+
+  const textarea = span.querySelector('textarea');
+  const saveBtn = span.querySelector('button:nth-of-type(1)');
+  const cancelBtn = span.querySelector('button:nth-of-type(2)');
+
+  saveBtn.onclick = () => {
+    const newText = textarea.value.trim();
+    if (!newText) return alert("Відгук не може бути пустим!");
+    db.ref(`markers/${markerId}/reviews/${reviewId}`).update({ text: newText });
+  };
+
+  cancelBtn.onclick = () => { span.textContent = oldText; };
+}
+
+// Додавання нового відгуку
 addReviewBtn.onclick = () => {
   const text = newReview.value.trim();
   const author = reviewAuthor.value.trim() || "Анонім";
+  currentUserId = author; // Проста авторизація по імені
   const fileInput = document.getElementById('reviewFile');
   const file = fileInput.files[0];
 
-  if (!text) return alert("Введіть текст відгуку!");
+  if (!text && !file) {
+    alert("Напишіть відгук або додайте медіа!");
+    return;
+  }
+
   const date = new Date().toLocaleString('uk-UA');
-  const reviewData = { author, text, date };
+  const reviewData = { author, authorId: currentUserId, text, date };
 
   if (file) {
     const reader = new FileReader();
@@ -859,16 +806,22 @@ closeReviewsBtn.onclick = () => {
   currentReviewId = null;
 };
 
-// Відкриття фото/відео на весь екран
+// Повноекранне відкриття медіа
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("review-media")) {
     if (e.target.tagName === 'IMG') {
       fsImg.src = e.target.src;
       fsImg.style.display = 'block';
-      fsVideo.style.display = 'none';
     } else if (e.target.tagName === 'VIDEO') {
+      const fsVideo = document.createElement('video');
       fsVideo.src = e.target.src;
-      fsVideo.style.display = 'block';
+      fsVideo.controls = true;
+      fsVideo.style.maxWidth = '95%';
+      fsVideo.style.maxHeight = '95%';
+      fsVideo.style.borderRadius = '8px';
+      fsVideo.id = 'fsVideo';
+      mediaFullScreen.innerHTML = '';
+      mediaFullScreen.appendChild(fsVideo);
       fsImg.style.display = 'none';
     }
     mediaFullScreen.style.display = 'flex';
@@ -879,8 +832,11 @@ document.addEventListener("click", (e) => {
 mediaFullScreen.onclick = () => {
   mediaFullScreen.style.display = 'none';
   fsImg.src = '';
-  fsVideo.src = '';
+  const fsVideo = document.getElementById('fsVideo');
+  if(fsVideo) fsVideo.pause();
 };
+
+
 
 // --- Повноекранне фото ---
 document.addEventListener("click", (e) => {
@@ -899,4 +855,3 @@ document.getElementById("imgFullScreen").onclick = () => {
 </script>
 </body>
 </html>
-
