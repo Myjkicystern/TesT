@@ -697,6 +697,96 @@ function loadReviews(markerId) {
     if (!snap.exists()) {
       reviewsList.innerHTML = '<p style="text-align:center; color:#777;">(немає відгуків)</p>';
       return;
+      // Завантаження відгуків
+function loadReviews(markerId) {
+  const ref = db.ref(`reviews/${markerId}`);
+  reviewsList.innerHTML = '<p style="text-align:center; color:#777;">Завантаження...</p>';
+
+  ref.on('value', snap => {
+    const data = snap.val();
+    if (!data) {
+      reviewsList.innerHTML = '<p style="text-align:center; color:#777;">(немає відгуків)</p>';
+      return;
+    }
+
+    reviewsList.innerHTML = '';
+    Object.values(data).forEach(r => {
+      const div = document.createElement('div');
+      div.style.marginBottom = '10px';
+      div.style.borderBottom = '1px solid #eee';
+      div.style.paddingBottom = '6px';
+      div.innerHTML = `<b>${r.author || 'Анонім'}</b><br>${r.text || ''}`;
+
+      if (r.media) {
+        const isVideo = r.media.startsWith('data:video');
+        const mediaEl = document.createElement(isVideo ? 'video' : 'img');
+        mediaEl.src = r.media;
+        mediaEl.className = 'review-media';
+        mediaEl.style.width = '100%';
+        mediaEl.style.marginTop = '5px';
+        if (isVideo) mediaEl.controls = true;
+        div.appendChild(mediaEl);
+      }
+      reviewsList.appendChild(div);
+    });
+  });
+}
+
+// Додавання нового відгуку
+addReviewBtn.onclick = () => {
+  const text = newReview.value.trim();
+  const author = reviewAuthor.value.trim() || 'Анонім';
+  const file = document.getElementById('reviewFile').files[0];
+
+  if (!text && !file) {
+    alert("Напишіть відгук або додайте медіа!");
+    return;
+  }
+
+  const ref = db.ref(`reviews/${currentReviewId}`).push();
+
+  const saveReview = (media = null) => {
+    ref.set({ author, text, media, time: Date.now() });
+    newReview.value = '';
+    reviewAuthor.value = '';
+    document.getElementById('reviewFile').value = '';
+  };
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => saveReview(e.target.result);
+    reader.readAsDataURL(file);
+  } else saveReview();
+};
+
+// Закриття вікна відгуків
+closeReviewsBtn.onclick = () => {
+  reviewsBox.style.display = 'none';
+  currentReviewId = null;
+};
+
+// Повноекранне відкриття зображення/відео
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('review-media')) {
+    if (e.target.tagName === 'VIDEO') {
+      fsVideo.src = e.target.src;
+      fsVideo.style.display = 'block';
+      fsImg.style.display = 'none';
+    } else {
+      fsImg.src = e.target.src;
+      fsImg.style.display = 'block';
+      fsVideo.style.display = 'none';
+    }
+    mediaFullScreen.style.display = 'flex';
+  }
+});
+mediaFullScreen.onclick = () => {
+  mediaFullScreen.style.display = 'none';
+  fsImg.src = '';
+  fsVideo.src = '';
+  fsVideo.pause();
+};
+
     }
 
     snap.forEach(child => {
@@ -807,10 +897,26 @@ mediaFullScreen.onclick = () => {
   fsVideo.src = '';
 };
 
+// --- Повноекранне фото ---
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("review-media")) {
+    const full = document.getElementById("imgFullScreen");
+    const fsImg = document.getElementById("fsImg");
+    fsImg.src = e.target.src;
+    full.style.display = "flex";
+  }
+});
+
+document.getElementById("imgFullScreen").onclick = () => {
+  document.getElementById("imgFullScreen").style.display = "none";
+};
+
 </script>
-<div id="imgFullScreen" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);justify-content:center;align-items:center;z-index:9999;">
-  <img id="fsImg" src="" style="max-width:95%;max-height:95%;border-radius:8px;cursor:zoom-out;">
+<div id="imgFullScreen">
+  <img id="fsImg" src="">
 </div>
 
 </body>
 </html>
+
+
