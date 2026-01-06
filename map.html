@@ -7,9 +7,9 @@
 <link rel="icon" type="image/png" href="my-icon.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.7.0/dist/leaflet.polylineDecorator.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <style>
 /* Loader */
 #loader {
@@ -237,7 +237,7 @@ html, body { height:100%; margin:0; font-family:sans-serif; }
 <!-- Вхід -->
 <div id="loginBox">
   <div class="popup-box">
-    <h3>Вхід для адміна</h3>
+    <h3>Вхід для автора</h3>
     <input type="password" id="adminPass" placeholder="Введіть пароль">
     <button id="loginSubmit">Увійти</button>
     <p id="loginMsg" style="color:red; font-size:14px;"></p>
@@ -324,6 +324,96 @@ const db = firebase.database();
 
 // Центр карти
 const map = L.map('map').setView([49.0, 31.0], 6);
+// ===== Виділена дорога =====
+const highlightedRoadCoords = [
+  [49.767888, 18.637699],
+  [49.770259, 18.637543],
+  [49.780329, 18.631721],
+  [49.782479, 18.628270],
+  [49.783530, 18.627860],
+  [49.784384, 18.627884],
+  [49.787169, 18.629024],
+  [49.796813, 18.636988],
+  [49.796913, 18.636608],
+  [49.801978, 18.633461],
+  [49.801234, 18.626948],
+  [49.801487, 18.626126],
+  [49.802005, 18.625492],
+  [49.802477, 18.622463], 
+  [49.802787, 18.613922],
+  [49.803947, 18.613210],
+  [49.804935, 18.611089],
+  [49.805149, 18.607608],
+  [49.803441, 18.599730],
+  [49.805366, 18.598896],
+  [49.805787, 18.599050],
+  [49.806200, 18.598852],
+  [49.806043, 18.598092],
+  [49.806007, 18.597618],
+  [49.807100, 18.597112], 
+  [49.811129, 18.595940],
+  [49.812242, 18.595935],
+  [49.813317, 18.594641],
+  [49.816723, 18.596047], 
+  [49.821214, 18.596252],
+  [49.821770, 18.595901],
+  [49.822303, 18.596085],
+  [49.825741, 18.592114],
+  [49.825414, 18.591484],
+];
+const highlightedRoad = L.polyline(highlightedRoadCoords, {
+  color: '#0066ff',   //  колір дороги
+  weight: 6,          // товщина
+  opacity: 0.9,
+  lineJoin: 'round',
+  dashArray: null     // можна "10,10" для пунктиру
+}).addTo(map);
+
+// === Іконки A і B ===
+function addStartEndMarkers(coords, map) {
+  const start = coords[0];
+  const end = coords[coords.length - 1];
+
+  function letterIcon(letter, bgColor) {
+    return L.divIcon({
+      html: `
+        <div style="
+          width:28px;
+          height:28px;
+          border-radius:50%;
+          background:${bgColor};
+          color:#fff;
+          font-weight:700;
+          font-size:14px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-shadow:0 0 6px rgba(0,0,0,0.6);
+          border:2px solid #fff;
+        ">${letter}</div>
+      `,
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+  }
+
+  // A — початок
+  L.marker(start, {
+    icon: letterIcon('A', '#16a34a'), // зелений
+    interactive: false
+  }).addTo(map);
+
+  // B — кінець
+  L.marker(end, {
+    icon: letterIcon('B', '#dc2626'), // червоний
+    interactive: false
+  }).addTo(map);
+}
+
+// Виклик
+addStartEndMarkers(highlightedRoadCoords, map);
+
 
 // 🔹 Google Hybrid (супутник + назви)
 const googleHybrid = L.tileLayer(
@@ -855,4 +945,3 @@ document.getElementById("imgFullScreen").onclick = () => {
 </script>
 </body>
 </html>
-
