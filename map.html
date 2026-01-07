@@ -369,52 +369,6 @@ const highlightedRoad = L.polyline(highlightedRoadCoords, {
   dashArray: null     // можна "10,10" для пунктиру
 }).addTo(map);
 
-// === Іконки A і B ===
-function addStartEndMarkers(coords, map) {
-  const start = coords[0];
-  const end = coords[coords.length - 1];
-
-  function letterIcon(letter, bgColor) {
-    return L.divIcon({
-      html: `
-        <div style="
-          width:28px;
-          height:28px;
-          border-radius:50%;
-          background:${bgColor};
-          color:#fff;
-          font-weight:700;
-          font-size:14px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          box-shadow:0 0 6px rgba(0,0,0,0.6);
-          border:2px solid #fff;
-        ">${letter}</div>
-      `,
-      className: '',
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
-    });
-  }
-
-  // A — початок
-  L.marker(start, {
-    icon: letterIcon('A', '#16a34a'), // зелений
-    interactive: false
-  }).addTo(map);
-
-  // B — кінець
-  L.marker(end, {
-    icon: letterIcon('B', '#dc2626'), // червоний
-    interactive: false
-  }).addTo(map);
-}
-
-// Виклик
-addStartEndMarkers(highlightedRoadCoords, map);
-
-
 // 🔹 Google Hybrid (супутник + назви)
 const googleHybrid = L.tileLayer(
   'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', 
@@ -945,3 +899,4 @@ document.getElementById("imgFullScreen").onclick = () => {
 </script>
 </body>
 </html>
+
