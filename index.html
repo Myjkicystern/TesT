@@ -51,13 +51,25 @@ h1 {
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 1px;
-  background: linear-gradient(90deg, #007bff, #6f42c1, #00c6ff, #ff6ec7);
+
+  background: linear-gradient(
+    90deg,
+    #007bff,
+    #6f42c1,
+    #00c6ff,
+    #ff6ec7
+  );
   background-size: 300% 300%;
-  -webkit-background-clip: text;
+
+  background-clip: text;              /* стандарт */
+  -webkit-background-clip: text;      /* Chrome / Safari */
+
+  color: transparent;
   -webkit-text-fill-color: transparent;
+
   margin: 5px 0 10px 0;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
+
 
 /* Ефект плавної появи */
 @keyframes fadeInDown {
@@ -180,14 +192,6 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
   margin-top: 10px;
 }
 
-.santa-hat {
-  position: absolute;
-  width: 55px; /* Розмір шапки */
-  top: -13px;  /* Висота підйому над текстом */
-  left: -24px; /* Зміщення вліво/вправо */
-  transform: rotate(-18deg);
-  pointer-events: none;
-}
 
 .snowflake {
   position: fixed;
@@ -229,7 +233,6 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 
 <div class="title-wrap">
   <h1>Мийки цистерн</h1>
-  <img src="Santa.png" alt="Santa Hat" class="santa-hat">
 </div>
 
 <p> Нові мийки можна писати в коментарях і вони будуть додані на карту.</p>
@@ -647,10 +650,3 @@ setInterval(createSnowflake, 200);
 
 </body>
 </html>
-
-
-
-
-
-
-
