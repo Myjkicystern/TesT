@@ -193,25 +193,6 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 }
 
 
-.snowflake {
-  position: fixed;
-  top: -10px;
-  color: white;
-  font-size: 12px;
-  pointer-events: none;
-  animation: fall linear infinite;
-  opacity: 0.9;
-  z-index: 9000;
-}
-
-@keyframes fall {
-  0% {
-    transform: translateY(-10px) rotate(0deg);
-  }
-  100% {
-    transform: translateY(110vh) rotate(360deg);
-  }
-}
 
 </style>
 </head>
@@ -622,28 +603,8 @@ function updateUserCount() {
 }
 updateUserCount();
 
-function createSnowflake() {
-  const snowflake = document.createElement('div');
-  snowflake.classList.add('snowflake');
-  snowflake.textContent = '❄';
-
-  // Випадкові параметри
-  snowflake.style.left = Math.random() * 100 + 'vw';
-  snowflake.style.animationDuration = 4 + Math.random() * 6 + 's';
-  snowflake.style.fontSize = 10 + Math.random() * 12 + 'px';
-
-  document.body.appendChild(snowflake);
-
-  // Видалення після анімації
-  setTimeout(() => {
-    snowflake.remove();
-  }, 10000);
-}
-
 // Частота створення сніжинок
 setInterval(createSnowflake, 200);
-
-
 
 </script>
 
@@ -651,4 +612,3 @@ setInterval(createSnowflake, 200);
 
 </body>
 </html>
-
