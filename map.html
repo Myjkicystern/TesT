@@ -1796,7 +1796,7 @@ function updateHeightVisibility() {
     const zoom = map.getZoom();
 
     // показувати шар тільки при зумі 10+
-    if (zoom >= 10) {
+    if (zoom >= 11) {
         if (!map.hasLayer(heightLayer)) {
             map.addLayer(heightLayer);
         }
