@@ -193,17 +193,73 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 }
 
 
+.height-icons{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:55px;
+  margin-top:-25px;
+  margin-bottom:-15px;
+}
 
+.height-icons img{
+  width:52px;
+  height:52px;
+  transition:transform .2s ease;
+}
+
+.height-icons img:hover{
+  transform:scale(1.15);
+}
+
+.live-user{
+  position: fixed;
+  right: 30px;
+  top: 25px;
+  color: rgb(99, 91, 219);
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  white-space: nowrap;
+  z-index: 99999;
+  pointer-events: none;
+
+  animation: userFloat 3s ease forwards;
+}
+
+@keyframes userFloat{
+  0%{
+    opacity:0;
+    transform:translateY(5px);
+  }
+
+  20%{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  100%{
+    opacity:0;
+    transform:translateY(-8px);
+  }
+}
+
+.info-text{
+  margin-top:-12px;
+  margin-bottom:10px;
+}
 </style>
 </head>
 <body>
 
 <!-- 🔹 Бігучий рядок -->
 <div class="marquee-container">
-  <div class="marquee-track" id="marqueeTrack">
-    Шукаєш мийку цистерни поблизу?
- Карта мийок цистерн допоможе знайти станції по всій Європі швидко та без зайвих кілометрів.Приєднуйся, додавай нові мийки та ділись з колегами.
-  </div>
+<div class="marquee-track" id="marqueeTrack">
+🚛 Карта мийок цистерн по всій Європі • 📍 Додавай нові мийки та допомагай колегам • 📏 Доступні обмеження по висоті
+• ⭐ Швидкий пошук і побудова маршруту
+</div>
 </div>
 
 <div id="userCounter">
@@ -215,9 +271,16 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
 
 <div class="title-wrap">
   <h1>Мийки цистерн</h1>
+   <div class="height-icons">
+    <img src="hl3.1_mapdistant.svg" alt="3.1m">
+    <img src="hl3.7_mapdistant.svg" alt="3.7m">
+    <img src="hl3.8_mapdistant.svg" alt="3.8m">
+  </div>
 </div>
 
-<p> Нові мийки можна писати в коментарях і вони будуть додані на карту.</p>
+<p class="info-text">
+  Нові мийки можна писати в коментарях і вони будуть додані на карту.
+</p>
 
 <!-- Вхід -->
 <div id="loginSection">
@@ -269,6 +332,8 @@ textarea,input{width:80%;max-width:250px;padding:6px;font-size:14px;border-radiu
     <button onclick="closeModal()">Закрити</button>
   </div>
 </div>
+
+<div id="liveUsers"></div>
 
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -371,6 +436,7 @@ function signInAnon(){
     localStorage.setItem('userName',name);
     localStorage.setItem('isAdmin',false);
     saveUserInDB();
+    showLiveUser(name);
     enableUI();
     checkUserVote();
     checkBlockedStatus();
@@ -553,8 +619,52 @@ function deleteComment(id){
   db.ref('comments/'+id).remove();
 }
 function saveUserInDB(){
-  db.ref('users/'+currentUserUID).set({name:currentUserName,isAdmin,isBlocked:false});
+  db.ref('users/'+currentUserUID).set({
+    name: currentUserName,
+    isAdmin: isAdmin,
+    isBlocked: false,
+    joinedAt: Date.now()
+  });
 }
+function startUsersStream() {
+
+  db.ref('users').on('value', snap => {
+
+    const users = snap.val() || {};
+
+    const uniqueNames = new Map();
+
+    for (let uid in users) {
+
+      const name = users[uid].name?.trim();
+
+      if (name && !uniqueNames.has(name.toLowerCase())) {
+        uniqueNames.set(name.toLowerCase(), name);
+      }
+    }
+
+    window.streamNames = [...uniqueNames.values()];
+  });
+
+  let index = 0;
+
+  setInterval(() => {
+
+    if (!window.streamNames || !window.streamNames.length) return;
+
+    showLiveUser(window.streamNames[index]);
+
+    index++;
+
+    if (index >= window.streamNames.length) {
+      index = 0;
+    }
+
+  }, 2000);
+
+}
+
+startUsersStream();
 function loadUsers(){
   db.ref('users').on('value',snap=>{
     const users=snap.val();
@@ -603,12 +713,33 @@ function updateUserCount() {
 }
 updateUserCount();
 
-// Частота створення сніжинок
-setInterval(createSnowflake, 200);
 
+function showLiveUser(name){
+
+  const container = document.getElementById('liveUsers');
+
+  const div = document.createElement('div');
+  div.className = 'live-user';
+
+  const icons = ['👤','🚛','⭐','🔥','⚡'];
+  div.textContent =
+    icons[Math.floor(Math.random()*icons.length)] + ' ' + name;
+
+  // невеликий розкид навколо лічильника
+  div.style.right = (45 + Math.random()*65) + 'px';
+  div.style.top = (28 + Math.random()*5) + 'px';
+
+  container.appendChild(div);
+
+  setTimeout(() => {
+    div.remove();
+  }, 3000);
+}
 </script>
 
 <div class="version">Бета-Версія 1.1.0</div>
 
 </body>
 </html>
+
+
