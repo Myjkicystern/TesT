@@ -443,38 +443,24 @@ function showUserInfo(){
 }
 
 // ================= Авторизація =================
-function signInAnon() {
-  let name = document.getElementById('userNameInput').value.trim();
-  if (!name) return showModal("Введіть ім'я!");
-
-  firebase.auth().signInAnonymously()
-    .then(res => {
-
-      console.log("UID:", res.user.uid);
-      console.log("Current user:", firebase.auth().currentUser);
-
-      currentUserUID = res.user.uid;
-      currentUserName = name;
-      isAdmin = false;
-
-      localStorage.setItem('userUID', currentUserUID);
-      localStorage.setItem('userName', name);
-      localStorage.setItem('isAdmin', false);
-
-      return saveUserInDB();   // Чекаємо завершення запису
-    })
-    .then(() => {
-      showLiveUser(currentUserName);
-      enableUI();
-      checkUserVote();
-      checkBlockedStatus();
-      showModal("Ви увійшли як " + currentUserName);
-      document.getElementById('infoIcon').style.display = 'none';
-    })
-    .catch(err => {
-      console.error("Помилка:", err);
-      showModal("Помилка: " + err.message);
-    });
+function signInAnon(){
+  let name=document.getElementById('userNameInput').value.trim();
+  if(!name) return showModal("Введіть ім'я!");
+  firebase.auth().signInAnonymously().then(res=>{
+    currentUserUID=res.user.uid;
+    currentUserName=name;
+    isAdmin=false;
+    localStorage.setItem('userUID',currentUserUID);
+    localStorage.setItem('userName',name);
+    localStorage.setItem('isAdmin',false);
+    saveUserInDB();
+    showLiveUser(name);
+    enableUI();
+    checkUserVote();
+    checkBlockedStatus();
+    showModal("Ви увійшли як "+name);
+    document.getElementById('infoIcon').style.display='none';
+  });
 }
 
 function promptAdmin(){
@@ -650,10 +636,8 @@ function blockComment(id,state){
 function deleteComment(id){
   db.ref('comments/'+id).remove();
 }
-console.log("UID зі змінної:", currentUserUID);
-console.log("UID Firebase:", firebase.auth().currentUser.uid);
-function saveUserInDB() {
-  return db.ref('users/' + currentUserUID).set({
+function saveUserInDB(){
+  db.ref('users/'+currentUserUID).set({
     name: currentUserName,
     isAdmin: isAdmin,
     isBlocked: false,
