@@ -650,6 +650,8 @@ function blockComment(id,state){
 function deleteComment(id){
   db.ref('comments/'+id).remove();
 }
+console.log("UID зі змінної:", currentUserUID);
+console.log("UID Firebase:", firebase.auth().currentUser.uid);
 function saveUserInDB() {
   return db.ref('users/' + currentUserUID).set({
     name: currentUserName,
