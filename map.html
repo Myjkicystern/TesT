@@ -2012,17 +2012,29 @@ function addMarkerToMap(id, data) {
     }
   };
   btnContainer.appendChild(shareBtn);
+  db.ref(`markers/${id}/reviews`).once("value").then(snap => {
+
+    const count = snap.exists() ? snap.numChildren() : 0;
+
+    reviewBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M21 6h-2v9H5v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zM17 2H3c-.55 0-1 .45-1 1v13l4-4h11c.55 0 1-.45 1-1-1V3c0-.55-.45-1-1-1z"/>
+    </svg>
+    Відгуки (${count})
+    `;
+
+});
 
   // --- 🗨️ Кнопка "Відгуки" ---
   const reviewBtn = document.createElement('button');
   reviewBtn.className = 'share-btn';
   reviewBtn.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
   reviewBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M21 6h-2v9H5v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zM17 2H3c-.55 0-1 .45-1 1v13l4-4h11c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1z"/>
-    </svg>
-    Відгуки
-  `;
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M21 6h-2v9H5v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zM17 2H3c-.55 0-1 .45-1 1v13l4-4h11c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1z"/>
+  </svg>
+  Відгуки (<span id="reviewCount_${id}">0</span>)
+`;
   reviewBtn.onclick = () => openReviewsWindow(id, data.title);
   btnContainer.appendChild(reviewBtn);
 
@@ -2032,7 +2044,19 @@ function addMarkerToMap(id, data) {
     .addTo(map)
     .bindPopup(popupDiv, { closeButton: true, offset: [0, -40] });
   marker.options.data = data;
-  markers[id] = marker;
+markers[id] = marker;
+// 🔹 Лічильник відгуків
+db.ref(`markers/${id}/reviews`).on("value", snapshot => {
+
+    const count = snapshot.exists() ? snapshot.numChildren() : 0;
+
+    const span = document.getElementById(`reviewCount_${id}`);
+
+    if (span) {
+        span.textContent = count;
+    }
+
+});
 
   // Підсвічування
   marker.on('click', () => {
@@ -2088,8 +2112,8 @@ markersRef.once('value').then(snap=>{
 });
 
 // ----------------- Адмін -----------------
-document.getElementById('adminBtn').onclick=()=>{ 
-  if(isAdmin){ 
+document.getElementById('adminBtn').onclick=()=>{
+  if (isAdmin) {
     isAdmin=false; refreshAdminClicks(); map.off('dblclick'); 
     document.getElementById('adminBtn').textContent="🔑"; 
     document.getElementById('coordSearch').style.display='none'; 
@@ -2264,7 +2288,7 @@ function loadReviews(markerId) {
         editBtn.onclick = () => editReview(markerId, reviewId, div, r.text);
         div.appendChild(editBtn);
       }
-
+console.log("isAdmin =", isAdmin);
       if (isAdmin) {
         const delBtn = document.createElement('button');
         delBtn.textContent = '❌';
@@ -2323,6 +2347,7 @@ addReviewBtn.onclick = () => {
     reader.onload = e => {
       reviewData.file = e.target.result;
       db.ref(`markers/${currentReviewId}/reviews`).push(reviewData);
+      loadReviews(currentReviewId);
     };
     reader.readAsDataURL(file);
   } else {
