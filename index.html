@@ -466,7 +466,7 @@ function signInAnon(){
 function promptAdmin(){
   const key=prompt("Введіть ключ адміна:");
   if(key!==null){
-    if(key==="admin123"){
+    if(key==="atik2026"){
       isAdmin=true;
       firebase.auth().signInAnonymously().then(res=>{
         currentUserUID=res.user.uid;
